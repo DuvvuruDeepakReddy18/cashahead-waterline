@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CashAhead — Know your Friday before it arrives</title>
+<meta name="description" content="CashAhead turns a wedding photographer's notebook, chats and voice notes into a 90-day cash forecast. See Friday's shortfall before it happens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&family=Kalam:wght@400;700&family=Noto+Sans+Telugu:wght@400;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","lenis":"https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.mjs"}}
+</script>
+<style>
+:root{
+--paper:#F5F1E8;--paper-2:#EAE4D6;--sheet:#FBF9F4;--ink:#15130F;--ink-2:#2B2823;--mute:#6B655C;
+--line:rgba(21,19,15,.12);--brand:#F2A900;--brand-tint:rgba(242,169,0,.30);--short:#E0352B;--covered:#1E9E5A;
+--water:#CFDDE3;--jot:#3346D3;--scout:#1FA2E0;--mend:#F2A900;--dock:#8E4FD8;
+--glass:rgba(255,255,255,.72);--ease:cubic-bezier(.2,.8,.2,1);--io:cubic-bezier(.65,0,.35,1);--out:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--paper);scroll-behavior:auto}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{background:var(--paper);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:400;overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5}
+body.no-scroll{overflow:hidden}
+a{color:var(--ink);text-decoration:none}
+button{font-family:inherit;cursor:pointer;background:none;border:0;color:inherit}
+img,svg,canvas{display:block;max-width:100%}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.serif{font-family:Fraunces,serif}
+.kalam{font-family:Kalam,"Noto Sans Devanagari","Nirmala UI",sans-serif}
+.telugu{font-family:"Noto Sans Telugu",sans-serif}
+.hindi{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+::selection{background:var(--brand-tint)}
+/* grain */
+.grain{position:fixed;inset:0;z-index:90;pointer-events:none;opacity:.45;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .42 0 0 0 0 .38 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;height:72px;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,6vw,96px);transition:background .5s,color .5s,border-color .5s;border-bottom:1px solid transparent}
+.nav.solid{background:rgba(245,241,232,.82);backdrop-filter:blur(14px);border-bottom-color:var(--line)}
+.nav.dark{background:transparent;color:#fff;border-bottom-color:transparent}
+.nav.dark a,.nav.dark .logo-name{color:#fff}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;letter-spacing:-.02em}
+.logo svg{flex:none}
+.nav-links{display:flex;gap:40px}
+.nav-links a{font-weight:500;font-size:14px;position:relative;padding:4px 0}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:0;height:1.5px;width:100%;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+.nav-links a:hover::after{transform:scaleX(1)}
+.nav-right{display:flex;align-items:center;gap:18px}
+.nav-demo{font-size:14px;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:20px;font-weight:600;font-size:15px;padding:0 18px;height:40px;transition:transform .3s var(--ease),box-shadow .3s}
+.btn .arr{transition:transform .3s var(--ease)}
+.btn:hover .arr{transform:translateX(3px)}
+.btn-brand{background:var(--brand);color:var(--ink)}
+.btn-brand:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(242,169,0,.35)}
+.btn-outline{border:1px solid var(--ink);color:var(--ink);background:transparent}
+.btn-outline:hover{background:var(--ink);color:var(--paper)}
+.btn-lg{height:48px;border-radius:24px;padding:0 24px;font-size:16px}
+/* cursor */
+.cursor{position:fixed;top:0;left:0;width:34px;height:34px;border:1.5px solid var(--ink);border-radius:50%;pointer-events:none;z-index:120;transform:translate(-50%,-50%);transition:width .4s var(--ease),height .4s var(--ease),background .4s,border-radius .4s,border-color .4s;display:flex;align-items:center;justify-content:center}
+.cursor .dot{position:absolute;left:50%;top:50%;width:5px;height:5px;background:var(--ink);border-radius:50%;transform:translate(-50%,-50%)}
+.cursor .clabel{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.12em;color:var(--ink);opacity:0;white-space:nowrap}
+.cursor.btn{width:19px;height:19px}.cursor.btn .dot{opacity:0}
+.cursor.develop{width:72px;height:72px;background:var(--brand);border-color:var(--brand)}
+.cursor.develop .clabel,.cursor.drag .clabel{opacity:1}
+.cursor.drag{width:68px;height:68px;background:var(--ink);border-color:var(--ink)}
+.cursor.drag .clabel{color:var(--paper)}
+.cursor.focus{border-radius:0;width:44px;height:44px}
+.cursor.light{border-color:#fff}.cursor.light .dot{background:#fff}
+@media(pointer:coarse){.cursor{display:none}}
+@media(pointer:fine){body{cursor:none} a,button{cursor:none}}
+/* crew dock */
+.dock{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:75;height:44px;display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:22px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);box-shadow:0 10px 30px rgba(20,16,10,.12)}
+.dock .avs{display:flex;gap:6px}
+.dock .av{width:28px;height:28px;border-radius:50%;border:2px solid var(--jot);overflow:hidden;background:#fff;transition:transform .3s}
+.dock .av img{width:100%;height:100%;object-fit:cover}
+.dock .av.active{animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15);box-shadow:0 0 0 4px rgba(242,169,0,.35)}}
+.dock-status{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;white-space:nowrap;overflow:hidden;height:14px}
+.dock-status span{display:block;transition:transform .65s var(--ease)}
+/* highlight marks */
+mark.hl{background:linear-gradient(transparent 56%,var(--brand-tint) 56%) no-repeat;background-size:0% 100%;color:inherit;padding:0 2px;transition:background-size .9s var(--out);position:relative}
+mark.hl.on{background-size:100% 100%}
+mark.hl.ok{background-image:linear-gradient(transparent 56%,rgba(30,158,90,.3) 56%)}
+mark.hl.short{background-image:linear-gradient(transparent 56%,rgba(224,53,43,.28) 56%)}
+mark.hl::after{content:"✓";font-size:10px;color:var(--covered);position:absolute;right:-12px;top:-4px;transform:scale(0);transition:transform .3s var(--out) .8s}
+mark.hl.on::after{transform:scale(1)}
+/* section chrome */
+.sec-label{position:absolute;top:26px;left:clamp(20px,6vw,96px);font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;display:flex;gap:8px;align-items:center;z-index:5}
+.sec-count{position:absolute;top:26px;right:clamp(20px,6vw,96px);font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;z-index:5;color:var(--mute)}
+.corners{position:absolute;inset:18px;pointer-events:none;z-index:4}
+.corners::before,.corners::after{content:"";position:absolute;width:14px;height:14px;border:1px solid rgba(21,19,15,.35)}
+.corners::before{top:0;left:0;border-right:0;border-bottom:0}
+.corners::after{bottom:0;right:0;border-left:0;border-top:0}
+.film-edge{position:absolute;left:10px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.2em;color:rgba(21,19,15,.3);z-index:4}
+.sample-tag{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.14em;color:var(--mute);border:1px solid var(--line);padding:2px 6px;border-radius:3px}
+/* WORLD */
+#world{height:560vh;position:relative}
+#world .stage{position:sticky;top:0;height:100vh;overflow:hidden;background:linear-gradient(180deg,#DCE3EC 0%,#E9E7E3 45%,#F5F1E8 100%)}
+#worldCanvas{position:absolute;inset:0;width:100%;height:100%}
+.mist{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.75),transparent 70%);filter:blur(6px);animation:mist 18s ease-in-out infinite alternate;pointer-events:none}
+@keyframes mist{from{transform:translateX(-4vw)}to{transform:translateX(4vw)}}
+.wordmark-wrap{position:absolute;left:0;right:0;top:52%;transform:translateY(-50%);text-align:center;z-index:6;pointer-events:none;will-change:transform,filter,opacity}
+.wordmark{font-weight:800;font-variation-settings:"opsz" 96,"wdth" 92;font-size:16vw;letter-spacing:-.04em;line-height:1;white-space:nowrap;position:relative}
+.wordmark .ltr{display:inline-block;will-change:transform}
+.wordmark .under{position:absolute;inset:0;color:var(--short);filter:url(#waveFilter);clip-path:inset(58% 0 0 0)}
+.wordmark .over{position:relative;clip-path:inset(0 0 42% 0)}
+.hero-line{position:absolute;left:4%;right:4%;top:60%;height:120px;z-index:5;pointer-events:none}
+.hero-line svg{width:100%;height:100%;overflow:visible}
+.water-band{position:absolute;left:0;right:0;top:60%;height:40vh;background:linear-gradient(180deg,rgba(207,221,227,.45),rgba(207,221,227,.15));z-index:4;pointer-events:none}
+.fri-chip{position:absolute;z-index:7;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;background:var(--sheet);border:1px solid var(--line);padding:6px 10px;border-radius:20px;box-shadow:0 6px 18px rgba(20,16,10,.12);transform:translate(-50%,-140%)}
+.fri-chip.short{color:var(--short);border-color:var(--short)}
+.fri-chip.ok{color:var(--covered);border-color:var(--covered)}
+.late-tag{position:absolute;z-index:7;font-family:Kalam,sans-serif;color:var(--short);font-size:17px;transform:rotate(-4deg);opacity:0;transition:opacity .4s}
+.grease-note{position:absolute;z-index:7;font-family:Kalam,sans-serif;color:var(--short);font-size:17px;opacity:0}
+.hero-ui{position:absolute;inset:0;z-index:8;pointer-events:none}
+.hero-ui>*{pointer-events:auto}
+.eyebrow{position:absolute;top:calc(74px + 5vh);left:50%;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;border:1px solid var(--line);border-radius:26px;padding:7px 14px;background:rgba(251,249,244,.7);backdrop-filter:blur(6px);white-space:nowrap}
+.tagline{position:absolute;left:7vw;bottom:13vh;max-width:30ch;font-weight:600;font-size:clamp(22px,2vw,30px);line-height:1.25}
+.tagline .line-mask{display:block;overflow:hidden}
+.tagline .line-mask span{display:block}
+.sub{position:absolute;left:7vw;bottom:calc(13vh - 118px);max-width:50ch;color:var(--mute);font-size:16px}
+.hero-ctas{position:absolute;left:7vw;bottom:calc(13vh - 178px);display:flex;gap:12px;flex-wrap:wrap}
+.toggles{position:absolute;left:7vw;bottom:calc(13vh - 232px);display:flex;gap:10px;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;background:var(--glass);border:1px solid var(--line);border-radius:20px;padding:7px 12px;backdrop-filter:blur(8px)}
+.toggle .sw{width:30px;height:17px;border-radius:9px;background:#CFC8B8;position:relative;transition:background .3s;flex:none}
+.toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:transform .3s var(--ease)}
+.toggle[aria-checked="true"] .sw{background:var(--covered)}
+.toggle[aria-checked="true"] .sw::after{transform:translateX(13px)}
+.hud{position:absolute;right:7vw;bottom:13vh;display:flex;flex-direction:column;gap:12px;width:260px;z-index:8}
+.hud-card{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;padding:14px 16px;position:relative;box-shadow:0 14px 34px rgba(20,16,10,.1)}
+.hud-card .lbl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;color:var(--mute)}
+.hud-card .big{font-family:"IBM Plex Mono",monospace;font-size:26px;font-weight:500;margin-top:4px}
+.hud-card .big.neg{color:var(--short)}.hud-card .big.pos{color:var(--covered)}
+.hud-card .sample-tag{position:absolute;top:10px;right:10px}
+.hud-row{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:12px;padding:3px 0}
+.week-meter{display:flex;gap:4px;margin-top:8px}
+.week-meter i{flex:1;height:8px;background:var(--ink);border-radius:2px}
+.week-meter i.neg{background:var(--short)}
+.week-meter i.out{outline:2px solid var(--brand);outline-offset:1px}
+.scroll-hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:8;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.2em;color:var(--mute)}
+.scroll-hint::after{content:"";display:block;width:1px;height:28px;background:var(--ink);margin:6px auto 0;animation:hint 1.6s infinite}
+@keyframes hint{0%{transform:scaleY(.3);transform-origin:top}55%{transform:scaleY(1)}100%{transform:scaleY(.3);transform-origin:top}}
+.world-progress{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:120px;height:2px;background:var(--line);z-index:9}
+.world-progress i{display:block;height:100%;background:var(--brand);transform:scaleX(0);transform-origin:left}
+.vision{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;width:min(92vw,900px);text-align:center;font-family:Fraunces,serif;font-size:clamp(30px,3.6vw,56px);line-height:1.2;opacity:0;pointer-events:none}
+.vision em{font-style:italic;color:var(--short)}
+.vision .w{display:inline-block}
+.day-counter{position:absolute;top:92px;left:50%;transform:translateX(-50%);z-index:8;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;background:var(--glass);border:1px solid var(--line);padding:8px 16px;border-radius:20px;backdrop-filter:blur(8px);opacity:0}
+.final-line{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;text-align:center;font-weight:800;font-size:4.2vw;line-height:1;opacity:0;white-space:nowrap}
+.crew-card{position:absolute;top:50%;transform:translateY(-50%);width:300px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;padding:18px;z-index:8;opacity:0;pointer-events:none}
+.crew-card.left{left:7vw}.crew-card.right{right:7vw}
+.crew-card .cc-head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.crew-card .cc-head img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--brand)}
+.crew-card h3{font-size:22px;font-weight:600}
+.crew-card p{font-size:14.5px;color:var(--ink-2)}
+.crew-card .chip{display:inline-block;margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;border:1px solid var(--line);border-radius:20px;padding:6px 10px;background:var(--sheet)}
+.leader-line{position:absolute;inset:0;z-index:7;pointer-events:none}
+.paper-out{position:absolute;left:0;right:0;bottom:0;height:40vh;z-index:10;pointer-events:none;background:var(--paper);clip-path:polygon(0 100%,0 88%,4% 90%,9% 84%,15% 89%,22% 85%,30% 90%,38% 84%,46% 89%,54% 85%,62% 90%,70% 84%,78% 89%,86% 85%,93% 90%,100% 86%,100% 100%);transform:translateY(101%)}
+/* DRYING LINE */
+#line{height:420vh;position:relative;background:var(--paper)}
+#line .stage{position:sticky;top:0;height:100vh;overflow:hidden}
+#line h2.title{position:absolute;top:84px;left:50%;transform:translateX(-50%);font-family:Fraunces,serif;font-weight:400;font-size:clamp(30px,3vw,46px);text-align:center;white-space:nowrap;z-index:5}
+.tabs{position:absolute;top:158px;left:50%;transform:translateX(-50%);display:flex;z-index:6;border:1px solid var(--line)}
+.tabs button{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;padding:10px 16px;position:relative;z-index:1;border-right:1px solid var(--line)}
+.tabs button:last-child{border-right:0}
+.tabs .tab-ind{position:absolute;top:0;bottom:0;background:var(--brand);z-index:0;transition:left .6s var(--ease),width .6s var(--ease)}
+.print-stage{position:absolute;left:50%;top:0;width:0;height:0;perspective:2000px;z-index:3}
+.print{position:absolute;transform-style:preserve-3d;will-change:transform}
+.print .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:3px;overflow:hidden;background:#FBFAF6;box-shadow:0 24px 50px -24px rgba(20,16,10,.5)}
+.print .face.back{transform:rotateY(180deg);background:#EFE9DC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.print .face::after{content:"";position:absolute;inset:0;background:#000;opacity:var(--shade,0);pointer-events:none}
+.print svg{width:100%;height:100%}
+.peg{position:absolute;left:50%;top:-14px;transform:translateX(-50%);z-index:2}
+.line-string{position:absolute;left:0;right:0;top:22%;height:60px;z-index:2;pointer-events:none}
+.line-string svg{width:100%;height:100%;overflow:visible}
+.caption{position:absolute;left:50%;bottom:8vh;transform:translateX(-50%);text-align:center;z-index:6;width:min(92vw,720px)}
+.caption .mask{overflow:hidden}
+.caption .mask>div{transition:transform .65s var(--ease),opacity .65s}
+.caption h3{font-family:Fraunces,serif;font-size:31px;font-weight:400}
+.caption .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;margin:6px 0}
+.caption .hook{color:var(--mute);font-size:14px}
+.line-arrow{position:absolute;bottom:9vh;width:44px;height:44px;border:1px solid var(--ink);border-radius:50%;z-index:7;font-size:18px;background:var(--sheet)}
+.line-arrow.prev{left:20px}.line-arrow.next{right:20px}
+.develop-ring{position:absolute;width:42px;height:42px;border:3px solid var(--brand);border-radius:50%;z-index:6;display:none;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:9px;background:var(--sheet)}
+/* detail sheet */
+.detail{position:fixed;inset:0;z-index:100;background:var(--sheet);display:none;overflow:auto}
+.detail.open{display:block}
+.detail-inner{display:grid;grid-template-columns:1fr 1fr;gap:40px;max-width:1200px;margin:0 auto;padding:90px 40px 60px;min-height:100vh}
+.detail h2{font-family:Fraunces,serif;font-size:clamp(44px,5.4vw,84px);line-height:1.02;font-weight:400;margin:14px 0 26px}
+.detail .dlabel{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em}
+.detail .dlabel b{color:var(--short)}
+.detail p{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin-bottom:18px;max-width:52ch}
+.detail .helper-chip{display:flex;align-items:center;gap:10px;margin:22px 0}
+.detail .helper-chip img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--brand)}
+.detail-close{position:fixed;top:20px;right:24px;z-index:101;width:44px;height:44px;border:1px solid var(--ink);border-radius:50%;background:var(--sheet);font-size:18px}
+.tray{background:#E7EDEF;border:1px solid rgba(21,19,15,.2);border-radius:18px;padding:22px;position:relative;box-shadow:inset 0 2px 0 rgba(255,255,255,.7)}
+.tray svg{width:100%;height:auto;border-radius:6px}
+.stamp{position:absolute;top:34px;right:34px;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:15px;letter-spacing:.1em;color:var(--covered);border:3px solid var(--covered);border-radius:6px;padding:8px 12px;transform:rotate(-8deg);opacity:0;background:rgba(251,249,244,.85)}
+.stamp.ink{color:var(--ink);border-color:var(--ink)}
+/* DESK */
+#desk{height:420vh;position:relative;background:var(--paper)}
+#desk .stage{position:sticky;top:0;height:100vh;overflow:hidden}
+#deskCanvas{position:absolute;inset:0;width:100%;height:100%}
+.desk-headline{position:absolute;top:88px;left:50%;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(34px,4.2vw,64px);white-space:nowrap}
+.desk-headline span{color:rgba(21,19,15,.35);transition:color .3s}
+.desk-headline span.on{color:var(--ink);background:linear-gradient(transparent 58%,var(--brand-tint) 58%)}
+.week-sheet{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%) perspective(1200px) rotateX(12deg);width:560px;max-width:86vw;background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:16px;z-index:5;box-shadow:0 30px 60px -20px rgba(20,16,10,.35)}
+.week-sheet .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day-frame{border:1px solid var(--line);border-radius:6px;padding:8px 6px;min-height:118px;background:#fff}
+.day-frame.short{border-color:var(--short);box-shadow:0 0 0 1px var(--short)}
+.day-frame .dow{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.1em;color:var(--mute)}
+.day-frame .amt{font-family:"IBM Plex Mono",monospace;font-size:11px;margin-top:6px}
+.day-frame .bal{font-family:"IBM Plex Mono",monospace;font-size:16px;font-weight:500;margin-top:8px}
+.day-frame .bal.neg{color:var(--short)}.day-frame .bal.pos{color:var(--covered)}
+.week-line{margin-top:12px;height:34px;position:relative}
+.week-line svg{width:100%;height:100%;overflow:visible}
+.panel{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:300px}
+.panel.left{left:4vw}.panel.right{right:4vw}
+.panel .big-fri{font-weight:800;font-size:64px;line-height:1}
+.panel .big-fri.neg{color:var(--short)}.panel .big-fri.pos{color:var(--covered)}
+.plan-row{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:var(--glass);font-size:13.5px}
+.plan-row.rec{background:var(--brand-tint);border-color:var(--brand)}
+.plan-row.ex{opacity:.55;text-decoration:line-through}
+.plan-row .conf{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;border:1px solid var(--line);border-radius:10px;padding:2px 6px;white-space:nowrap}
+.log{background:#1A1814;color:#EDE8DC;border-radius:12px;padding:16px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.7;min-height:220px;white-space:pre-wrap;word-break:break-word}
+.log .r{color:#FF7A6E}.log .g{color:#4ADE80}.log .a{color:#F2A900}
+.client-chip{position:absolute;top:96px;right:4vw;z-index:6;background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center;max-width:300px}
+.client-chip .av{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:13px;flex:none}
+.client-chip .st{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;margin-top:4px}
+.filed{position:absolute;left:4vw;bottom:26px;z-index:6;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em}
+.queue{position:absolute;right:4vw;bottom:26px;z-index:6;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;color:var(--mute)}
+.send-bubble{position:absolute;z-index:7;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;max-width:300px;font-size:14px;box-shadow:0 16px 40px rgba(20,16,10,.18);opacity:0}
+.bank-row{position:absolute;left:50%;bottom:15vh;transform:translateX(-50%);z-index:6;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-family:"IBM Plex Mono",monospace;font-size:12px;opacity:0;box-shadow:0 14px 30px rgba(20,16,10,.15)}
+.bank-row mark{background:var(--brand-tint)}
+.desk-stamp{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(-8deg);z-index:8;font-family:"IBM Plex Mono",monospace;font-size:15px;letter-spacing:.08em;border:3px solid var(--covered);color:var(--covered);border-radius:8px;padding:10px 14px;background:rgba(251,249,244,.9);opacity:0}
+.desk-stamp.ink{border-color:var(--ink);color:var(--ink)}
+/* SLIDER */
+#slider{position:relative;height:100vh;min-height:680px;overflow:hidden;background:#1B2A6B}
+.slide{position:absolute;inset:0;will-change:clip-path}
+.slide .sky{position:absolute;inset:-3%;transform:scale(1.04)}
+.slide .tint{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,30,.35),transparent 40%)}
+.slide h2{position:absolute;left:4vw;top:calc(74px + 4vh);font-weight:800;text-transform:uppercase;line-height:.9;font-size:7.4vw;letter-spacing:-.02em;z-index:3}
+.slide h2 .wm{display:block;overflow:hidden}
+.slide h2 .wm span{display:inline-block;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.86) 36%,rgba(255,255,255,.16));-webkit-background-clip:text;background-clip:text;color:transparent}
+.vignette{position:absolute;left:6vw;top:40%;width:40vw;background:var(--sheet);border-radius:10px;padding:18px;z-index:2;transform:perspective(1400px) rotateY(10deg) rotateX(4deg);box-shadow:0 30px 60px rgba(10,10,40,.35)}
+.vignette h4{font-family:Fraunces,serif;font-size:20px;font-weight:400;margin-bottom:10px}
+.vignette .vrow{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;margin-top:6px;background:#fff}
+.vignette .vrow.hl{background:var(--brand-tint)}
+.vignette .vrow.bad{color:var(--short);border-color:var(--short)}
+.bokeh{position:absolute;left:-4%;right:-4%;bottom:-6%;height:64%;z-index:1;pointer-events:none;mix-blend-mode:screen}
+.bokeh img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;-webkit-mask-image:linear-gradient(180deg,transparent,#000 40%);mask-image:linear-gradient(180deg,transparent,#000 40%)}
+.bokeh .back{opacity:.8;transform:scaleX(-1)}
+.bokeh-fade{position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(180deg,transparent,var(--paper));z-index:2}
+.rail{position:absolute;right:6vw;top:calc(74px + 8%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:.9vw}
+.rail .thumb{border-radius:50%;border:3px solid rgba(255,255,255,.92);overflow:hidden;background:#fff;box-shadow:0 10px 26px rgba(20,10,40,.3);transition:width .9s var(--io),height .9s var(--io);position:relative;z-index:2}
+.rail .thumb img{width:100%;height:100%;object-fit:cover}
+.rail .thumb.active{box-shadow:0 0 0 9px rgba(255,255,255,.25),0 10px 26px rgba(20,10,40,.3)}
+.ring{position:absolute;border:1.6px solid rgba(255,255,255,.5);border-radius:50%;pointer-events:none;z-index:1;transition:transform .9s var(--io)}
+.rail-caption{position:absolute;right:calc(6vw + 13vw);top:calc(74px + 12%);z-index:5;color:#fff;max-width:260px;text-align:right}
+.rail-caption .bar{width:3px;height:60px;background:#fff;margin-left:auto;margin-bottom:10px}
+.rail-caption h3{font-weight:300;font-size:clamp(26px,2.75vw,40px);line-height:1.1}
+.rail-caption p{font-size:clamp(12px,1vw,14.5px);margin-top:8px;opacity:.9}
+.leak{position:absolute;top:0;bottom:0;width:34vw;z-index:6;pointer-events:none;mix-blend-mode:screen;filter:blur(14px);background:radial-gradient(ellipse at center,rgba(255,190,110,.8),rgba(255,140,190,.55) 55%,transparent 75%);opacity:0}
+.whatif{position:absolute;left:50%;bottom:13vh;transform:translateX(-50%);z-index:7;width:min(960px,calc(100% - 40px));background:rgba(255,255,255,.94);border-radius:26px;box-shadow:0 18px 60px rgba(40,20,80,.18);display:flex;align-items:center;gap:8px;padding:10px 14px}
+.whatif .field{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;flex:1;min-width:0}
+.whatif .field:hover,.whatif .field.active{background:#fff;box-shadow:0 6px 18px rgba(20,16,10,.12)}
+.whatif label{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;color:var(--mute);display:block}
+.whatif input{border:0;background:transparent;font-family:"IBM Plex Mono",monospace;font-size:15px;width:86px;outline:none;color:var(--ink)}
+.whatif .pop{position:absolute;bottom:100px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 16px 40px rgba(20,16,10,.2);display:none;z-index:9}
+.whatif .pop.open{display:block}
+.whatif .pop button{display:block;width:100%;text-align:left;padding:7px 10px;font-family:"IBM Plex Mono",monospace;font-size:12px;border-radius:6px}
+.whatif .pop button:hover{background:var(--paper-2)}
+.whatif .stepper{display:flex;align-items:center;gap:6px}
+.whatif .stepper button{width:24px;height:24px;border:1px solid var(--line);border-radius:6px;font-size:15px}
+.whatif-check{width:44px;height:44px;background:var(--ink);color:#fff;border-radius:11px;flex:none;font-size:20px;transition:transform .3s}
+.whatif-check:hover{transform:scale(1.1) rotate(-8deg)}
+.whatif-result{position:absolute;left:50%;bottom:calc(13vh + 104px);transform:translateX(-50%);z-index:8;width:min(560px,calc(100% - 40px));background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(20,10,40,.25);padding:18px;display:none}
+.whatif-result.open{display:block;animation:drop .4s var(--out)}
+@keyframes drop{from{transform:translate(-50%,8px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.whatif-result .res{font-size:17px;font-weight:600;margin:8px 0}
+.whatif-result .res.neg{color:var(--short)}.whatif-result .res.pos{color:var(--covered)}
+.mini-strip{display:flex;gap:4px;margin-top:12px}
+.mini-strip i{flex:1;height:10px;background:var(--ink);border-radius:2px}
+.mini-strip i.neg{background:var(--short)}.mini-strip i.out{outline:2px solid var(--brand)}
+.whatif-foot{position:absolute;left:50%;bottom:calc(13vh - 24px);transform:translateX(-50%);z-index:7;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;color:rgba(255,255,255,.85)}
+/* CAROUSEL */
+#carousel{position:relative;height:100vh;overflow:hidden;background:var(--paper)}
+#carousel .frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:1440px;height:1080px;transform-origin:center;overflow:hidden}
+.car-badge{position:absolute;left:560px;top:115px;width:320px;height:37px;background:#FCEFC7;border-radius:19px;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16.6px}
+.car-head{position:absolute;left:0;right:0;top:176px;text-align:center;font-weight:800;font-size:88px;line-height:92px;letter-spacing:-.035em}
+.car-sub{position:absolute;left:0;right:0;top:394px;text-align:center;font-size:20.8px;line-height:32px;color:var(--mute)}
+.car-note{position:absolute;font-family:Kalam,sans-serif;font-weight:700;color:var(--brand);font-size:22px;line-height:1.15}
+.car-btn{position:absolute;left:601px;top:901px;width:220px;height:58px}
+.car-btn .ring-dash{position:absolute;inset:-8px;border:1.5px dashed var(--brand);border-radius:38px}
+.car-btn a{display:flex;width:100%;height:100%;align-items:center;justify-content:center;background:var(--brand);border-radius:29px;font-weight:600;font-size:16px}
+.car-track{position:absolute;left:0;top:0;width:1440px;height:1080px;pointer-events:none}
+.car-card{position:absolute;top:0;left:0;will-change:transform;pointer-events:auto}
+.car-card .inner{width:384px;height:540px;background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:20px;overflow:hidden;transform-origin:top left}
+.car-card h5{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;color:var(--mute);margin-bottom:12px}
+.car-card .body{font-size:17px;line-height:1.55}
+.car-card .body .telugu{font-size:18px}
+.car-card .chip{position:absolute;left:16px;bottom:16px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:20px;padding:6px 10px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em}
+.car-card .chip.ok{color:var(--covered);border-color:var(--covered)}
+.car-card .lang{position:absolute;right:16px;top:16px;background:var(--ink);color:var(--paper);font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;border-radius:12px;padding:4px 8px}
+.car-tip{position:absolute;z-index:9;background:var(--ink);color:var(--paper);font-family:"IBM Plex Mono",monospace;font-size:11px;padding:8px 12px;border-radius:8px;pointer-events:none;display:none;white-space:nowrap}
+/* JOURNEY */
+#journey{position:relative;padding:120px 0 80px;background:var(--paper)}
+#journey h2{font-weight:800;font-size:clamp(38px,5vw,76px);line-height:1;text-align:center;margin:20px 0 60px}
+.river-wrap{position:relative;max-width:900px;margin:0 auto}
+.river-svg{position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:120px;overflow:visible;z-index:1}
+.jnode{position:relative;z-index:2;width:380px;max-width:78vw;background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 54px;opacity:.35;transform:translateY(16px);transition:opacity .5s,transform .5s,border-color .5s}
+.jnode.left{margin-right:auto}.jnode.right{margin-left:auto}
+.jnode.lit{opacity:1;transform:translateY(0);border-color:var(--dock)}
+.jnode .time{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;color:var(--mute)}
+.jnode .actor{display:flex;align-items:center;gap:8px;margin:8px 0}
+.jnode .actor img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--brand)}
+.jnode p{font-size:15px}
+.jnode .art{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.journey-end{text-align:center;max-width:640px;margin:30px auto 0;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.8;color:var(--mute)}
+/* CTA / FOOTER */
+#cta{min-height:100vh;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 20px 60px;position:relative;overflow:hidden}
+#cta h2{font-weight:800;font-size:9vw;line-height:.9;letter-spacing:-.02em}
+.crew-lineup{display:flex;gap:26px;align-items:flex-end;margin:44px 0 20px;flex-wrap:wrap;justify-content:center}
+.crew-lineup .cu{width:130px;text-align:center}
+.crew-lineup .cu img{width:130px;height:130px;object-fit:cover;border-radius:50%;border:3px solid var(--brand);background:#fff;animation:bob 3s ease-in-out infinite}
+.crew-lineup .cu:nth-child(2) img{animation-delay:.4s}.crew-lineup .cu:nth-child(3) img{animation-delay:.8s}.crew-lineup .cu:nth-child(4) img{animation-delay:1.2s}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(2deg)}}
+.crew-lineup .cu .nm{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;margin-top:8px}
+.ananya-cu{width:110px;height:150px;background:var(--ink);color:var(--paper);border-radius:60px 60px 8px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.ananya-cu .cam{font-size:30px}
+.you-slot{width:130px;height:130px;border:2px dashed var(--mute);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mute);text-align:center}
+.cta-line{font-family:Fraunces,serif;font-size:24px;margin-bottom:26px}
+.cta-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.cta-price{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--mute);margin-top:22px}
+.album-still{position:absolute;top:40px;right:40px;width:180px;border-radius:10px;border:1px solid var(--line);box-shadow:0 20px 40px rgba(20,16,10,.18);animation:bob 5s ease-in-out infinite}
+footer{background:var(--paper);border-top:1px solid var(--line);padding:60px clamp(20px,6vw,96px) 0;overflow:hidden}
+.foot-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;max-width:1000px}
+.foot-cols h4{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;color:var(--mute);margin-bottom:14px}
+.foot-cols a,.foot-cols span{display:block;padding:4px 0;font-size:15px}
+.foot-big{font-weight:800;font-size:13vw;line-height:.8;letter-spacing:-.03em;color:transparent;-webkit-text-stroke:1px var(--ink);text-align:center;margin-top:50px;white-space:nowrap;transform:translateY(18%)}
+.foot-copy{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--mute);text-align:center;padding:18px 0 26px}
+/* responsive */
+@media(max-width:1000px){
+.nav-links{display:none}
+.crew-card{left:50%!important;right:auto!important;transform:translate(-50%,0);top:auto;bottom:8vh;width:min(92vw,420px)}
+.panel.left{left:2vw;width:240px}.panel.right{right:2vw;width:240px}
+.detail-inner{grid-template-columns:1fr;padding:80px 20px 40px}
+}
+@media(max-width:820px){
+.wordmark{font-size:18vw}
+.hud{display:none}
+.toggles{left:4vw;right:4vw;bottom:calc(13vh - 190px);flex-direction:column;align-items:stretch}
+.toggle{justify-content:space-between}
+.tagline{left:4vw;bottom:24vh}.sub{left:4vw;right:4vw;bottom:calc(24vh - 90px);font-size:14px}
+.hero-ctas{left:4vw;bottom:calc(24vh - 150px)}
+.eyebrow{font-size:9.5px;max-width:92vw;white-space:normal;text-align:center}
+#line h2.title{white-space:normal;width:92vw;font-size:28px}
+.tabs button{padding:8px 9px;font-size:9px}
+.caption h3{font-size:24px}
+.week-sheet{width:94vw;top:46%}
+.day-frame{min-height:92px}.day-frame .bal{font-size:13px}
+.panel.left{top:auto;bottom:4vh;left:2vw;right:2vw;width:auto;transform:none;display:flex;gap:12px;align-items:center}
+.panel.right{display:none}
+.panel .big-fri{font-size:34px}
+.desk-headline{font-size:26px;white-space:normal;text-align:center;width:92vw}
+.client-chip{top:auto;bottom:16vh;right:2vw;left:2vw;max-width:none}
+.slide h2{font-size:13.5vw;width:80vw}
+.vignette,.rail-caption{display:none}
+.rail{right:3vw}
+.whatif{flex-wrap:wrap;bottom:8vh;border-radius:20px}
+.whatif .field{flex:1 1 40%}
+.whatif-check{width:100%;border-radius:12px}
+.whatif-foot{display:none}
+#carousel .frame{width:640px;height:1080px}
+.car-head{font-size:52px;line-height:56px}
+.car-sub{font-size:16px}
+.jnode{width:82vw;margin-left:auto!important;margin-right:0!important}
+.dock-status{display:none}
+.foot-cols{grid-template-columns:1fr 1fr}
+}
+@media(prefers-reduced-motion:reduce){
+*{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor" id="cursor" aria-hidden="true"><span class="dot"></span><span class="clabel" id="cursorLabel"></span></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="waveFilter" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.04" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6"/></filter>
+<filter id="waxy" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="3" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="1.5"/></filter>
+</defs></svg>
+
+<header class="nav" id="nav">
+  <a class="logo" href="#world" aria-label="CashAhead — back to top">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 15 L9 12 L13 17 L18 10 L24 7" fill="none" stroke="#F2A900" stroke-width="2"/><path d="M24 7 l-3.5 .4 M24 7 l-.4 3.5" stroke="#F2A900" stroke-width="2" fill="none"/></svg>
+    <span class="logo-name">CashAhead</span></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="#world">How it works</a><a href="#desk">Rescue plan</a><a href="#carousel">Reminders</a><a href="#journey">The math</a>
+    <a href="#" data-repo-link>GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <a class="nav-demo" href="#" data-video-link>Watch the demo</a>
+    <a class="btn btn-brand" href="/app">Try the sample studio <span class="arr">→</span></a>
+  </div>
+</header>
+
+<div class="dock" id="dock" aria-live="polite">
+  <div class="avs" id="dockAvs"></div>
+  <div class="dock-status"><span id="dockStatus">4 HELPERS READY · SAMPLE STUDIO LOADED</span></div>
+</div>
+
+<main>
+<!-- ============ SECTION 1 · WORLD ============ -->
+<section id="world" aria-label="The waterline — CashAhead forecast story">
+<div class="stage" id="worldStage">
+  <div class="mist" style="width:46vw;height:22vh;left:6%;top:12%"></div>
+  <div class="mist" style="width:38vw;height:20vh;right:4%;top:30%;animation-delay:-9s"></div>
+  <canvas id="worldCanvas" aria-hidden="true"></canvas>
+  <div class="water-band" aria-hidden="true"></div>
+  <div class="hero-line" aria-hidden="true"><svg id="heroLineSvg" viewBox="0 0 1000 120" preserveAspectRatio="none">
+    <path id="heroLinePath" d="" fill="none" stroke="#15130F" stroke-width="2.5"/>
+    <path id="heroLineRed" d="" fill="none" stroke="#E0352B" stroke-width="2.5"/>
+    <line x1="0" y1="60" x2="1000" y2="60" stroke="#CFDDE3" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="4" y="52" font-family="IBM Plex Mono" font-size="10" fill="#6B655C">≈ ₹0</text>
+    <g id="dayTicks"></g>
+  </svg></div>
+  <div class="wordmark-wrap" id="wordmarkWrap">
+    <div class="wordmark" id="wordmark" aria-label="CASHAHEAD"><span class="over" id="wmOver"></span><span class="under" id="wmUnder" aria-hidden="true"></span></div>
+  </div>
+  <div class="fri-chip" id="friChip" aria-live="polite">FRI +₹7,000</div>
+  <div class="late-tag" id="lateTag">Reddy–Varma: 15 days late</div>
+  <div class="grease-note" id="greaseNote">Fri −₹4,000 · Ravi ₹6,000 + LensHub ₹4,000</div>
+  <div class="hero-ui" id="heroUI">
+    <div class="eyebrow">◎ CASH FORECAST FOR WEDDING PHOTOGRAPHERS</div>
+    <p class="tagline"><span class="line-mask"><span>See Friday's shortfall <mark class="hl">before it happens</mark>.</span></span>
+    <span class="line-mask"><span>Know <mark class="hl">which invoice to chase</mark>.</span></span>
+    <span class="line-mask"><span>Confirm when the money lands.</span></span></p>
+    <p class="sub">CashAhead turns your notebook, chats and voice notes into a 90-day cash forecast, shows which late payment puts your next shoot at risk, and matches payments from your bank statement, so nothing is guessed and <mark class="hl">nothing is counted twice</mark>.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-brand btn-lg" href="/app">Try the sample studio <span class="arr">→</span></a>
+      <a class="btn btn-outline btn-lg" href="#line">Watch the story <span class="arr" style="display:inline-block;animation:hint 1.6s infinite">↓</span></a>
+    </div>
+    <div class="toggles">
+      <button class="toggle" role="switch" aria-checked="true" id="tglLate"><span class="sw"></span>Reddy–Varma pays 15 days late</button>
+      <button class="toggle" role="switch" aria-checked="true" id="tglPay"><span class="sw"></span>Kiran &amp; Divya pays ₹5,000 on Wed</button>
+    </div>
+  </div>
+  <div class="hud" id="hud">
+    <div class="hud-card"><span class="sample-tag">SAMPLE STUDIO</span><div class="lbl">CASH TODAY · MON</div><div class="big" id="hudCash">₹6,000</div><svg id="hudSpark" width="100%" height="34" viewBox="0 0 220 34" preserveAspectRatio="none" aria-hidden="true"><path id="hudSparkPath" fill="none" stroke="#F2A900" stroke-width="2"/></svg></div>
+    <div class="hud-card"><span class="sample-tag">SAMPLE STUDIO</span><div class="lbl">FRIDAY · BILLS ₹10,000</div><div class="big" id="hudFri">+₹7,000</div><div class="hud-row"><span>Ravi · crew</span><span>₹6,000</span></div><div class="hud-row"><span>LensHub · rental</span><span>₹4,000</span></div><div class="week-meter" id="weekMeter"></div></div>
+    <div class="hud-card"><span class="sample-tag">SAMPLE STUDIO</span><div class="lbl">LOWEST POINT · 30 DAYS</div><div class="big" id="hudLow">₹5,500</div><div class="hud-row"><span id="hudLowDay">D+21 · crew, Lakshmi &amp; Arjun</span><span id="hudLowState"></span></div></div>
+  </div>
+  <div class="vision" id="vision" aria-hidden="true"></div>
+  <div class="day-counter" id="dayCounter" aria-live="polite">TODAY · MON</div>
+  <div class="final-line" id="finalLine">We do the math.<br>You make the call.</div>
+  <svg class="leader-line" id="leaderSvg" aria-hidden="true"><line id="leaderLine" x1="0" y1="0" x2="0" y2="0" stroke="#F2A900" stroke-width="1"/><circle id="leaderDot" r="4" fill="#F2A900"/></svg>
+  <div id="crewCards"></div>
+  <div class="scroll-hint">SCROLL</div>
+  <div class="world-progress"><i id="worldFill"></i></div>
+  <div class="paper-out" id="paperOut"></div>
+  <p class="visually-hidden">Forecast: Friday +₹7,000; if Reddy–Varma pays 15 days late, −₹4,000; after Kiran &amp; Divya's ₹5,000, +₹1,000.</p>
+</div>
+</section>
+
+<!-- ============ SECTION 2 · DRYING LINE ============ -->
+<section id="line" aria-label="What sinks a week — ten case prints">
+<div class="stage">
+  <div class="corners"></div><div class="film-edge">CASHAHEAD 400 ▸ 12A ▸ 13 ▸ 13A ▸ 14</div>
+  <div class="sec-label">◎ 02 — WHAT SINKS A WEEK</div><div class="sec-count">CASE PRINTS 01–10</div>
+  <h2 class="title">Ten small money mistakes. One crew that catches them.</h2>
+  <div class="tabs" id="tabs" role="tablist" aria-label="Case categories"></div>
+  <div class="line-string" aria-hidden="true"><svg id="stringSvg" viewBox="0 0 1000 60" preserveAspectRatio="none"><path id="stringPath" d="" fill="none" stroke="rgba(21,19,15,.6)" stroke-width="1.5"/></svg></div>
+  <div class="print-stage" id="printStage"></div>
+  <button class="line-arrow prev" id="prevCase" aria-label="Previous case">←</button>
+  <button class="line-arrow next" id="nextCase" aria-label="Next case">→</button>
+  <div class="develop-ring" id="developRing">DEVELOP</div>
+  <div class="caption" aria-live="polite">
+    <div class="mask"><div id="capTitle"><h3></h3></div></div>
+    <div class="mask"><div id="capTag"><div class="tag"></div></div></div>
+    <div class="mask"><div id="capHook"><div class="hook"></div></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ============ SECTION 3 · RESCUE DESK ============ -->
+<section id="desk" aria-label="The rescue desk">
+<div class="stage">
+  <div class="corners"></div><div class="film-edge">CASHAHEAD 400 ▸ 12A ▸ 13 ▸ 13A ▸ 14</div>
+  <div class="sec-label">◎ 03 — THE RESCUE DESK</div><div class="sec-count" id="deskCount">SCENARIO 1/3</div>
+  <h2 class="desk-headline" id="deskHeadline"><span>Read.</span> <span>Spot.</span> <span>Plan.</span> <span>Send.</span> <span>Match.</span></h2>
+  <canvas id="deskCanvas" aria-hidden="true"></canvas>
+  <div class="client-chip" id="clientChip"><div class="av" id="clientAv">KD</div><div><div style="font-weight:600;font-size:14px" id="clientName">Kiran &amp; Divya</div><div style="font-size:12px;color:var(--mute)" id="clientNote">usually ~10 days late</div><div class="st" id="clientStatus">Not asked</div></div></div>
+  <div class="panel left" id="panelLeft"><div class="lbl mono" style="font-size:11px;letter-spacing:.14em;color:var(--mute)">THIS WEEK</div><div class="big-fri" id="deskFri" aria-live="polite">+₹7,000</div><div class="mono" style="font-size:12px;margin:4px 0 8px" id="deskGap">gap ₹0</div><div id="planRows"></div></div>
+  <div class="panel right"><div class="lbl mono" style="font-size:11px;letter-spacing:.14em;color:var(--mute);margin-bottom:8px">LEDGER LOG</div><div class="log" id="deskLog" aria-live="polite"></div></div>
+  <div class="week-sheet" id="weekSheet"><div class="days" id="weekDays"></div><div class="week-line"><svg id="weekLineSvg" viewBox="0 0 520 34" preserveAspectRatio="none"><path id="weekLinePath" fill="none" stroke="#15130F" stroke-width="2"/><line x1="0" y1="17" x2="520" y2="17" stroke="#CFDDE3" stroke-width="2" stroke-dasharray="6 5"/></svg></div><div class="mono" style="font-size:10px;letter-spacing:.12em;color:var(--mute);margin-top:6px" id="weekLabel">WEEK 1 · MON–SUN · SAMPLE STUDIO</div></div>
+  <div class="send-bubble" id="sendBubble"><span class="telugu">నమస్కారం కిరణ్ గారు, ఎంగేజ్‌మెంట్ షూట్ బ్యాలెన్స్ ₹8,000 ఇంకా రావాలి. ఈ లింక్‌తో చెల్లించవచ్చు (INV-101). ధన్యవాదాలు! – అనన్య</span><div style="margin-top:8px"><span class="mono" style="font-size:11px;background:var(--brand-tint);padding:3px 7px;border-radius:10px">pay link · INV-101 · ananya.sample@demo</span></div><div class="mono" style="font-size:10px;color:var(--mute);margin-top:6px">drafted — you send · nothing sends automatically</div></div>
+  <div class="bank-row" id="bankRow">UPI/CR/432198765012/KIRAN KUMAR/okicici/<mark>INV-101</mark> · ₹5,000 → <b>matched by reference ✓</b></div>
+  <div class="desk-stamp" id="deskStamp">COVERED · FRI +₹1,000 · ANANYA CONFIRMED · WED 20:30</div>
+  <div class="filed" id="filedCount">SCENARIOS FILED 0/3</div>
+  <div class="queue" id="queueLine">NEXT UP: A PROMISE WITH NO DATE →</div>
+</div>
+</section>
+
+<!-- ============ SECTION 4 · SLIDER ============ -->
+<section id="slider" aria-label="What CashAhead does">
+  <div id="slides"></div>
+  <div class="bokeh" aria-hidden="true"><img class="back" id="bokehBack" alt=""><img class="front" id="bokehFront" alt=""></div>
+  <div class="bokeh-fade" aria-hidden="true"></div>
+  <div class="leak" id="leak"></div>
+  <div class="rail" id="rail"></div>
+  <div class="rail-caption" id="railCaption"><div class="bar"></div><h3 id="railCapH"></h3><p id="railCapP"></p></div>
+  <div class="whatif-result" id="whatifResult" role="status"></div>
+  <div class="whatif" id="whatif">
+    <div class="field"><span aria-hidden="true">👛</span><div><label>CASH TODAY</label><input id="wiCash" type="text" inputmode="numeric" value="6,000" aria-label="Cash today in rupees"></div></div>
+    <div class="field" style="position:relative"><span aria-hidden="true">⛺</span><div><label>BILL</label><input id="wiBill" type="text" inputmode="numeric" value="10,000" aria-label="Bill amount"><button class="mono" id="wiBillDay" style="font-size:11px;border:1px solid var(--line);border-radius:8px;padding:2px 6px;margin-top:2px">FRI ▾</button></div><div class="pop" id="popBill"></div></div>
+    <div class="field" style="position:relative"><span aria-hidden="true">🏮</span><div><label>CLIENT PAYS</label><input id="wiPay" type="text" inputmode="numeric" value="11,000" aria-label="Client payment amount"><button class="mono" id="wiPayDay" style="font-size:11px;border:1px solid var(--line);border-radius:8px;padding:2px 6px;margin-top:2px">THU ▾</button></div><div class="pop" id="popPay"></div></div>
+    <div class="field"><span aria-hidden="true">🕐</span><div><label>LATE BY</label><div class="stepper"><button id="wiLateMinus" aria-label="Fewer late days">−</button><span class="mono" id="wiLateVal" style="font-size:15px">15d</span><button id="wiLatePlus" aria-label="More late days">+</button></div></div></div>
+    <button class="whatif-check" id="wiCheck" aria-label="Check my week">◎</button>
+  </div>
+  <div class="whatif-foot">SAMPLE MATH · RUNS IN YOUR BROWSER</div>
+</section>
+
+<!-- ============ SECTION 5 · CAROUSEL ============ -->
+<section id="carousel" aria-label="Chase politely — reminder drafts">
+<div class="frame" id="carFrame">
+  <div class="car-badge">English · <span class="telugu">తెలుగు</span> · <span class="hindi">हिन्दी</span> · you send every one</div>
+  <h2 class="car-head">Chase politely.<br>Get paid properly.</h2>
+  <p class="car-sub">Friendly, firm or final reminders in your language,<br>each with a UPI link that carries the invoice number,<br>so the payment can be <mark class="hl">matched by reference</mark>. You confirm every match.</p>
+  <div class="car-note" style="left:263px;top:377px">//</div>
+  <div class="car-note" style="left:1200px;top:310px;transform:rotate(14deg)">same numbers,<br>every language</div>
+  <svg style="position:absolute;left:1180px;top:390px" width="120" height="160" viewBox="0 0 120 160" aria-hidden="true"><path d="M10 10 C 60 60, 20 110, 70 150" fill="none" stroke="#F2A900" stroke-width="2.5"/><path d="M70 150 l-12 -2 M70 150 l-2 -12" stroke="#F2A900" stroke-width="2.5" fill="none"/></svg>
+  <div class="car-note" style="left:500px;top:937px;transform:rotate(-10deg)">nothing sends<br>on its own</div>
+  <div class="car-btn"><span class="ring-dash"></span><a href="/app">Try the sample studio →</a></div>
+  <div class="car-track" id="carTrack"></div>
+  <div class="car-tip" id="carTip">Same invoice, same amount, same link · sample studio</div>
+</div>
+</section>
+
+<!-- ============ SECTION 6 · JOURNEY ============ -->
+<section id="journey" aria-label="Counted once — the payment's journey">
+  <div class="sec-label" style="position:static;justify-content:center">◎ 06 — COUNTED ONCE</div>
+  <h2>Every rupee has one story.</h2>
+  <div class="river-wrap" id="riverWrap">
+    <svg class="river-svg" id="riverSvg" viewBox="0 0 120 2000" preserveAspectRatio="none" aria-hidden="true">
+      <path id="riverRibbon" d="M60 0 C 30 200, 90 400, 60 600 C 30 800, 90 1000, 60 1200 C 30 1400, 90 1600, 60 1800 L60 2000" fill="none" stroke="#CFDDE3" stroke-width="14" opacity=".5"/>
+      <path id="riverPath" d="M60 0 C 30 200, 90 400, 60 600 C 30 800, 90 1000, 60 1200 C 30 1400, 90 1600, 60 1800 L60 2000" fill="none" stroke="#8E4FD8" stroke-width="2"/>
+      <g id="riverBoat"><circle r="16" fill="#fff" stroke="#8E4FD8" stroke-width="2"/><text y="4" text-anchor="middle" font-size="13">⛵</text></g>
+    </svg>
+    <div id="journeyNodes"></div>
+  </div>
+  <p class="journey-end">CashAhead never moves money. It drafts; you send. It suggests; you confirm.<br><a class="btn btn-outline" style="margin-top:16px" href="#" data-repo-link>See how the math works →</a></p>
+</section>
+
+<!-- ============ SECTION 7 · CTA + FOOTER ============ -->
+<section id="cta" aria-label="Get started">
+  <img class="album-still" id="albumStill" alt="The pop-up album landscape, rendered in code" hidden>
+  <h2>Know your Friday<br>before it arrives.</h2>
+  <div class="crew-lineup" id="crewLineup"></div>
+  <p class="cta-line">We do the math. You make the call.</p>
+  <div class="cta-btns">
+    <a class="btn btn-brand btn-lg" href="/app">Try the sample studio <span class="arr">→</span></a>
+    <a class="btn btn-outline btn-lg" href="#" data-video-link>Watch the 2-minute demo</a>
+  </div>
+  <p class="cta-price">Early pricing we're testing: free for 5 open invoices · Pro ₹299/month. (A hypothesis — not a promise.)</p>
+</section>
+</main>
+<footer>
+  <div class="foot-cols">
+    <div><h4>PRODUCT</h4><span>Notebook intake</span><span>90-day forecast</span><span>Rescue plan</span><span>Reminders &amp; pay links</span><span>Bank matching</span></div>
+    <div><h4>PROJECT</h4><a href="#world">How it works</a><a href="#" data-repo-link>GitHub</a><a href="#" data-video-link>Demo video</a></div>
+    <div><h4>TRUST</h4><a href="#journey">How the math works</a><span>Privacy — data stays in your browser</span><span>Limits — drafts, never sends; suggests, never moves money</span></div>
+  </div>
+  <div class="foot-big" aria-hidden="true">CASHAHEAD</div>
+  <p class="foot-copy">© 2026 CASHAHEAD · SAMPLE STUDIO DATA IS FICTIONAL · ANANYA RAO PHOTOGRAPHY, VIJAYAWADA (INVENTED)</p>
+</footer>
+
+<!-- detail sheet -->
+<div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+  <button class="detail-close" id="detailClose" aria-label="Close case">✕</button>
+  <div class="detail-inner">
+    <div>
+      <div class="dlabel" id="detailTag"></div>
+      <h2 id="detailTitle"></h2>
+      <div class="dlabel" style="margin-bottom:8px">WHAT GOES WRONG</div>
+      <p id="detailWrong"></p>
+      <div class="dlabel" style="margin-bottom:8px">WHAT CASHAHEAD DOES</div>
+      <p id="detailDoes"></p>
+      <div class="helper-chip" id="detailHelper"></div>
+      <a class="btn btn-outline btn-lg" href="#desk" id="detailGoto">See it on the rescue desk ↓</a>
+    </div>
+    <div class="tray" id="tray"><div id="traySvg"></div><div class="stamp" id="trayStamp">FIXED ✓</div></div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import Lenis from 'lenis';
+/* CONFIG — §15 media upgrade slots live in ASSETS; empty = procedural fallback */
+const CONFIG={APP_URL:"/app",VIDEO_URL:"",REPO_URL:"",ASSETS:{}};
+/* Telugu/Hindi reminder copy in §6.3/§8.3 — have a native speaker check it before shipping. */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2, easeOut=t=>1-Math.pow(1-t,3), smooth=t=>t*t*(3-2*t);
+const inr=new Intl.NumberFormat('en-IN');
+const fmt=n=>(n<0?'−₹':'₹')+inr.format(Math.abs(Math.round(n)));
+const fmtSigned=n=>(n<0?'−₹':'+₹')+inr.format(Math.abs(Math.round(n)));
+const DOW=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const dayName=d=>DOW[((d%7)+7)%7]+(d===0?' · TODAY':' · D+'+d);
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---------- §1.5 sample studio + forecast ---------- */
+const STUDIO={opening:6000,incomes:[
+ {id:'INV-104',label:'Reddy–Varma · wedding final balance',amount:11000,day:3},
+ {id:'INV-105',label:'Lakshmi & Arjun · booking deposit',amount:15000,day:6},
+ {id:'INV-103',label:'Mehta Infotech · headshots',amount:6000,day:10},
+ {id:'INV-102',label:'Sai Teja · birthday shoot',amount:3500,day:12},
+ {id:'INV-108',label:'Meghana & Rohit · deposit',amount:20000,day:30},
+ {id:'INV-106',label:'Lakshmi & Arjun · final balance',amount:35000,day:40},
+ {id:'INV-109',label:'Meghana & Rohit · final balance',amount:45000,day:75},
+ {id:'INV-101',label:'Kiran & Divya · engagement balance',amount:8000,day:null,overdueDays:12,note:'overdue — left out until you estimate'}],
+ outgoings:[
+ {label:'Ravi · second shooter (crew)',amount:6000,day:4,canMove:false},
+ {label:'LensHub Rentals · lens & gimbal',amount:4000,day:4,canMove:true,moveDays:7},
+ {label:'Camera EMI',amount:7500,day:8,canMove:false},{label:'Camera EMI',amount:7500,day:38,canMove:false},{label:'Camera EMI',amount:7500,day:68,canMove:false},
+ {label:'Kavya · editor',amount:5000,day:15,canMove:true,moveDays:5},
+ {label:'Cloud storage',amount:1500,day:20,canMove:false},{label:'Cloud storage',amount:1500,day:50,canMove:false},{label:'Cloud storage',amount:1500,day:80,canMove:false},
+ {label:'Crew · Lakshmi & Arjun wedding',amount:12000,day:21,canMove:false},
+ {label:'Photo lab · album printing',amount:9000,day:35,canMove:true,moveDays:10},
+ {label:'Crew · Meghana & Rohit wedding',amount:14000,day:60,canMove:false}]};
+/* overrides: {moveIncome:{id,day}, addPayments:[{amount,day,invoice}], extraBills:[{label,amount,day,canMove}], replaceBill:{label,amount}} */
+function forecast(studio,overrides={},horizonDays=90){
+  const inc=studio.incomes.map(i=>({...i})); const out=studio.outgoings.map(o=>({...o}));
+  if(overrides.moveIncome){const t=inc.find(i=>i.id===overrides.moveIncome.id); if(t) t.day=overrides.moveIncome.day;}
+  if(overrides.replaceBill){const t=out.find(o=>o.label===overrides.replaceBill.label); if(t) t.amount=overrides.replaceBill.amount;}
+  if(overrides.extraBills) out.push(...overrides.extraBills);
+  const series=[]; let bal=studio.opening;
+  for(let d=0;d<=horizonDays;d++){
+    for(const i of inc) if(i.day===d) bal+=i.amount;
+    for(const p of (overrides.addPayments||[])) if(p.day===d) bal+=p.amount;
+    for(const o of out) if(o.day===d) bal-=o.amount;
+    series[d]=bal;
+  }
+  let firstShort=-1; for(let d=0;d<=horizonDays;d++) if(series[d]<0){firstShort=d;break;}
+  const billsDue=d=>out.filter(o=>o.day===d);
+  const win=series.slice(0,31); let low=Math.min(...win),lowDay=win.indexOf(low);
+  const inv101={due:8000,received:(overrides.addPayments||[]).filter(p=>p.invoice==='INV-101').reduce((a,p)=>a+p.amount,0)};
+  inv101.stillDue=inv101.due-inv101.received;
+  return{series,firstShortDay:firstShort,gap:firstShort<0?-series[firstShort]:0,billsDue:billsDue(firstShort<0?firstShort:4),lowest:low,lowestDay:lowDay,friday:series[4],inv101,opening:studio.opening};
+}
+const BASE=()=>forecast(STUDIO,{},90), LATE=()=>forecast(STUDIO,{moveIncome:{id:'INV-104',day:18}},90),
+ RESCUED=()=>forecast(STUDIO,{moveIncome:{id:'INV-104',day:18},addPayments:[{amount:5000,day:2,invoice:'INV-101'}]},90),
+ PAYONLY=()=>forecast(STUDIO,{addPayments:[{amount:5000,day:2,invoice:'INV-101'}]},90);
+console.assert(BASE().friday===7000,'baseline Fri'); console.assert(BASE().lowest===5500&&BASE().lowestDay===21,'baseline low');
+console.assert(LATE().friday===-4000,'late Fri'); console.assert(LATE().lowest===-4000,'late low');
+console.assert(RESCUED().friday===1000,'rescued Fri'); console.assert(RESCUED().inv101.stillDue===3000,'INV-101 still due');
+console.assert(PAYONLY().friday===12000,'payment-only Fri');
+console.assert(JSON.stringify(BASE().series.slice(0,14))===JSON.stringify([6000,6000,6000,17000,7000,7000,22000,22000,14500,14500,20500,20500,24000,24000]),'baseline 14d');
+console.assert(JSON.stringify(LATE().series.slice(0,14))===JSON.stringify([6000,6000,6000,6000,-4000,-4000,11000,11000,3500,3500,9500,9500,13000,13000]),'late 14d');
+console.assert(JSON.stringify(RESCUED().series.slice(0,14))===JSON.stringify([6000,6000,11000,11000,1000,1000,16000,16000,8500,8500,14500,14500,18000,18000]),'rescued 14d');
+/* hide empty-config links */
+if(!CONFIG.VIDEO_URL) $$('[data-video-link]').forEach(a=>a.style.display='none');
+if(!CONFIG.REPO_URL) $$('[data-repo-link]').forEach(a=>a.style.display='none');
+/* ---------- nav / cursor / dock / highlights ---------- */
+const lenis=new Lenis({lerp:.085,wheelMultiplier:.9,smoothWheel:true});
+const nav=$('#nav'),sliderSec=$('#slider'),worldSec=$('#world');
+function navState(){const y=scrollY,wr=worldSec.getBoundingClientRect(),sr=sliderSec.getBoundingClientRect();
+ nav.classList.toggle('dark',sr.top<72&&sr.bottom>72); nav.classList.toggle('solid',y>innerHeight*.5&&!(sr.top<72&&sr.bottom>72));}
+const cursor=$('#cursor'),cLabel=$('#cursorLabel'); let cx=innerWidth/2,cy=innerHeight/2,tx=cx,ty=cy;
+addEventListener('pointermove',e=>{tx=e.clientX;ty=e.clientY;});
+function setCursor(mode,label=''){cursor.className='cursor '+mode;cLabel.textContent=label;}
+document.addEventListener('mouseover',e=>{const t=e.target.closest('a,button,[data-cursor]'); if(!t){setCursor('');return;}
+ if(t.closest('#carousel')) setCursor('drag','DRAG'); else if(t.dataset.cursor) setCursor(t.dataset.cursor,t.dataset.clabel||''); else setCursor('btn');});
+const dockStatus=$('#dockStatus'); let dockTimer=null;
+function setDock(text,helper){dockStatus.textContent=text; $$('#dockAvs .av').forEach((a,i)=>a.classList.toggle('active',helper!=null&&i===helper));}
+/* highlight marks */
+const hlObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');else if(e.target.getBoundingClientRect().top>innerHeight)e.target.classList.remove('on');}),{threshold:.6});
+$$('mark.hl').forEach(m=>hlObs.observe(m));
+/* ---------- §2 origami factory ---------- */
+const PAPER_OUT=new THREE.MeshStandardMaterial({color:0xF8F5EE,roughness:.85,flatShading:true,side:THREE.FrontSide});
+function insideMat(hex){return new THREE.MeshStandardMaterial({color:new THREE.Color(hex).multiplyScalar(.85),roughness:.8,flatShading:true,side:THREE.BackSide});}
+function creases(mesh){const e=new THREE.EdgesGeometry(mesh.geometry,20);const l=new THREE.LineSegments(e,new THREE.LineBasicMaterial({color:0x15130F,transparent:true,opacity:.22}));mesh.add(l);return mesh;}
+function blobShadow(r=.7){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const gr=g.createRadialGradient(64,64,4,64,64,62);gr.addColorStop(0,'rgba(20,16,10,.35)');gr.addColorStop(1,'rgba(20,16,10,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);const m=new THREE.Mesh(new THREE.PlaneGeometry(r*2,r*2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2;return m;}
+function addEyes(g,positions,parent){const eyes=[];for(const p of positions){const e=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshStandardMaterial({color:0x15130F,roughness:.4}));e.position.set(...p);(parent||g).add(e);eyes.push(e);}return eyes;}
+function lights(scene){scene.add(new THREE.HemisphereLight(0xF3F1EC,0xD8CFC0,.9));const k=new THREE.DirectionalLight(0xFFF1DC,1.5);k.position.set(5,8,4);scene.add(k);const r=new THREE.DirectionalLight(0xC9D8FF,.6);r.position.set(-4,3,-6);scene.add(r);}
+function makeOrigami({id,kind,accent}){
+ const g=new THREE.Group();g.userData={id,kind,accent,eyes:[],wings:[],ears:[],trunk:[],head:null,sail:null};
+ const IN=insideMat(accent);
+ const mesh=(geo,mat=PAPER_OUT,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);creases(m);g.add(m);return m;};
+ if(kind==='owl'){
+  const body=mesh(new THREE.LatheGeometry([[0,0],[.34,.08],[.42,.45],[.36,.85],[.18,1.05],[0,1.1]].map(p=>new THREE.Vector2(p[0],p[1])),6),PAPER_OUT,0,0,0);
+  mesh(new THREE.ConeGeometry(.12,.22,4),PAPER_OUT,-.2,1.14,0).rotation.z=.25; mesh(new THREE.ConeGeometry(.12,.22,4),PAPER_OUT,.2,1.14,0).rotation.z=-.25;
+  mesh(new THREE.ConeGeometry(.06,.12,4),new THREE.MeshStandardMaterial({color:0xF2A900,flatShading:true}),0,.92,.4).rotation.x=Math.PI/2+.3;
+  const wl=mesh(new THREE.PlaneGeometry(.55,.8),IN,-.48,.55,0); wl.rotation.y=.5; const wr=mesh(new THREE.PlaneGeometry(.55,.8),IN,.48,.55,0); wr.rotation.y=-.5;
+  g.userData.wings=[wl,wr]; g.userData.head=body;
+  g.userData.eyes=addEyes(g,[[-.14,.95,.38],[.14,.95,.38]]);
+  mesh(new THREE.ConeGeometry(.07,.12,4),PAPER_OUT,-.1,.02,.15).rotation.x=Math.PI; mesh(new THREE.ConeGeometry(.07,.12,4),PAPER_OUT,.1,.02,.15).rotation.x=Math.PI;
+ } else if(kind==='crane'){
+  const body=mesh(new THREE.ConeGeometry(.36,.9,4),PAPER_OUT,0,.55,0); body.rotation.x=Math.PI/2; body.scale.set(1,.6,1);
+  const neck=mesh(new THREE.ConeGeometry(.07,.75,4),PAPER_OUT,-.28,1.05,0); neck.rotation.z=.96;
+  const tail=mesh(new THREE.ConeGeometry(.09,.7,4),PAPER_OUT,.3,.95,0); tail.rotation.z=-.96;
+  const wl=mesh(new THREE.PlaneGeometry(1.1,.7),IN,-.1,.85,0); wl.rotation.set(-.4,0,.5);
+  const wr=mesh(new THREE.PlaneGeometry(1.1,.7),IN,.1,.85,0); wr.rotation.set(-.4,0,-.5);
+  g.userData.wings=[wl,wr]; g.userData.head=neck;
+  g.userData.eyes=addEyes(g,[[-.42,1.32,.12],[-.42,1.32,-.12]]);
+  mesh(new THREE.CylinderGeometry(.02,.02,.4,4),PAPER_OUT,0,.2,0);
+ } else if(kind==='elephant'){
+  const body=mesh(new THREE.BoxGeometry(.9,.7,.6),PAPER_OUT,0,.55,0);
+  const head=mesh(new THREE.BoxGeometry(.5,.5,.5),PAPER_OUT,0,.95,.32); g.userData.head=head;
+  const el=mesh(new THREE.CircleGeometry(.26,5),IN,-.3,1.0,.1); el.rotation.y=-.6; const er=mesh(new THREE.CircleGeometry(.26,5),IN,.3,1.0,.1); er.rotation.y=.6;
+  g.userData.ears=[el,er];
+  let px=0,py=.85,pz=.62; const trunk=[];
+  for(let i=0;i<4;i++){const s=mesh(new THREE.ConeGeometry(.11-i*.015,.3,4),PAPER_OUT,px,py,pz); s.rotation.x=.5+i*.25; trunk.push(s); py-=.2; pz+=.06;}
+  g.userData.trunk=trunk;
+  [[-.3,.18],[-.3,-.18],[.3,.18],[.3,-.18]].forEach(p=>mesh(new THREE.BoxGeometry(.14,.36,.14),PAPER_OUT,p[0],.18,p[1]));
+  g.userData.eyes=addEyes(g,[[-.12,1.0,.58],[.12,1.0,.58]]);
+ } else { /* boat */
+  const hullL=mesh(new THREE.PlaneGeometry(1.2,.5),PAPER_OUT,0,.35,0); hullL.rotation.set(-.5,0,.5);
+  const hullR=mesh(new THREE.PlaneGeometry(1.2,.5),PAPER_OUT,0,.35,0); hullR.rotation.set(.5,0,-.5);
+  mesh(new THREE.ConeGeometry(.3,.5,3),PAPER_OUT,-.55,.4,0).rotation.z=Math.PI/2;
+  mesh(new THREE.ConeGeometry(.3,.5,3),PAPER_OUT,.55,.4,0).rotation.z=-Math.PI/2;
+  const cv=document.createElement('canvas');cv.width=256;cv.height=160;const sailTex=new THREE.CanvasTexture(cv);
+  const sail=mesh(new THREE.PlaneGeometry(.62,.8),new THREE.MeshStandardMaterial({map:sailTex,side:THREE.DoubleSide,roughness:.85,flatShading:true}),0,.95,0);
+  g.userData.sail=sail; g.userData.sailTex=sailTex; g.userData.sailCanvas=cv;
+  g.userData.eyes=addEyes(g,[[-.55,.42,.18],[-.55,.42,-.18]]);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.5,.62,32),new THREE.MeshBasicMaterial({color:0x8E4FD8,transparent:true,opacity:.35,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=.02; g.add(ring);
+ }
+ if(kind!=='boat'){const s=blobShadow(.7);s.position.y=.01;g.add(s);}
+ g.userData.setExpression=(expr)=>{g.userData.eyes.forEach(e=>{e.scale.set(1,expr==='alert'?1.25:expr==='focus'?.45:1,1);});};
+ g.userData.setSail=(text)=>{if(!g.userData.sailCanvas)return;const c=g.userData.sailCanvas,x=c.getContext('2d');x.fillStyle='#FBF9F4';x.fillRect(0,0,256,160);x.fillStyle=accent;x.font='700 26px "IBM Plex Mono",monospace';x.textAlign='center';x.fillText(text.split('·')[0]||text,128,70);x.font='500 20px "IBM Plex Mono",monospace';x.fillStyle='#15130F';x.fillText(text.split('·')[1]||'',128,105);g.userData.sailTex.needsUpdate=true;};
+ return g;
+}
+const HELPERS=[
+ {id:'JOT',kind:'owl',accent:'#3346D3',role:'Writes it down',body:'Turns notebook pages, chat messages and voice notes, in Telugu, Hindi or English, into invoices, bills and promises. You confirm every line.',chip:'NOTHING SAVED UNTIL YOU SAY SO'},
+ {id:'SCOUT',kind:'crane',accent:'#1FA2E0',role:'Flies ahead',body:"Draws your next 30, 60 or 90 days and finds the first day a bill can't be covered, and what one late payment would do to it.",chip:'SEES FRIDAY ON MONDAY'},
+ {id:'MEND',kind:'elephant',accent:'#F2A900',role:'Fills the gap',body:'Tests every mix of actions: collect overdue money, ask for a deposit early, move a bill. Recommends the one that works even if a slow client pays half, and says what\u2019s still uncovered.',chip:'EVEN IF THEY PAY HALF'},
+ {id:'DOCK',kind:'boat',accent:'#8E4FD8',role:'Brings it home',body:'Drafts the reminder with a UPI link that carries the invoice number, then matches the payment from your bank statement. It never counts the same money twice.',chip:'YOU CONFIRM EVERY MATCH'}];
+/* portraits: one offscreen render each, 512px, disposed after */
+const portraits={};
+function renderPortraits(){
+ try{
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+  r.setSize(512,512); r.setPixelRatio(1); r.toneMapping=THREE.ACESFilmicToneMapping; r.toneMappingExposure=1.05; r.outputColorSpace=THREE.SRGBColorSpace;
+  for(const h of HELPERS){
+   const sc=new THREE.Scene(); lights(sc);
+   const o=makeOrigami(h); o.position.y=-.55; o.rotation.y=.5; if(h.kind==='boat')o.position.y=-.3;
+   o.userData.setExpression('happy'); sc.add(o);
+   const cam=new THREE.PerspectiveCamera(32,1,.1,50); cam.position.set(1.6,1.4,3.4); cam.lookAt(0,.55,0);
+   r.render(sc,cam); portraits[h.id]=r.domElement.toDataURL('image/png');
+  }
+  r.dispose();
+ }catch(e){console.warn('portraits unavailable',e); for(const h of HELPERS) portraits[h.id]='';}
+}
+renderPortraits();
+$$('#dockAvs'); $('#dockAvs').innerHTML=HELPERS.map((h,i)=>`<span class="av" style="border-color:${h.accent}" title="${h.id}">${portraits[h.id]?`<img src="${portraits[h.id]}" alt="${h.id}">`:h.id[0]}</span>`).join('');
+$('#crewLineup').innerHTML=HELPERS.map(h=>`<div class="cu">${portraits[h.id]?`<img src="${portraits[h.id]}" alt="${h.id}, origami ${h.kind}">`:''}<div class="nm">${h.id} · ${h.role.toUpperCase()}</div></div>`).join('')+
+ `<div class="cu"><div class="ananya-cu"><span class="cam">📷</span><span class="mono" style="font-size:10px;letter-spacing:.1em">ANANYA RAO</span><span style="font-size:11px;color:#F2A900">photographer</span></div><div class="nm">ANANYA · DECIDES</div></div><div class="cu"><div class="you-slot">+ you<br>decide</div><div class="nm">&nbsp;</div></div>`;
+
+
+/* ---------- §4 hero: wordmark rides the forecast line ---------- */
+const WORD='CASHAHEAD';
+$('#wmOver').innerHTML=WORD.split('').map(c=>`<span class="ltr">${c}</span>`).join('');
+$('#wmUnder').innerHTML=WORD.split('').map(c=>`<span class="ltr">${c}</span>`).join('');
+let heroState={late:true,pay:true};
+function heroForecast(){return forecast(STUDIO,{moveIncome:heroState.late?{id:'INV-104',day:18}:null,addPayments:heroState.pay?[{amount:5000,day:2,invoice:'INV-101'}]:[]},13);}
+function linePath(series,n=14){const pts=[];for(let d=0;d<n;d++){const x=40+(d/(n-1))*920;const y=60-((series[d])/20000)*52;pts.push([x,clamp(y,4,116)]);}let s=`M${pts[0][0]} ${pts[0][1]}`;for(let i=1;i<pts.length;i++){const [x,y]=pts[i],[px,py]=pts[i-1];s+=` C${px+28} ${py},${x-28} ${y},${x} ${y}`;}return s;}
+function heroSeries(){return heroForecast().series;}
+function drawHeroLine(animate=false){
+ const s=heroSeries(); const path=linePath(s,innerWidth<=820?7:14);
+ const p=$('#heroLinePath'); p.setAttribute('d',path);
+ if(animate){const L=p.getTotalLength();p.style.strokeDasharray=L;p.style.strokeDashoffset=L;p.getBoundingClientRect();p.style.transition='stroke-dashoffset 1.2s cubic-bezier(.65,0,.35,1)';p.style.strokeDashoffset=0;setTimeout(()=>p.style.strokeDasharray='none',1300);}
+ /* letters ride the line */
+ const n=innerWidth<=820?7:14; const wrap=$('#wordmarkWrap');
+ $$('#wmOver .ltr, #wmUnder .ltr').forEach((el,i)=>{const frac=(i+.5)/WORD.length;const d=clamp(Math.round(frac*(n-1)),0,n-1);const y=60-((s[d])/20000)*52;const px=(y-60)*1.1;el.style.transform=`translateY(${px}px)`;});
+ /* day ticks */
+ const ticks=$('#dayTicks'); ticks.innerHTML=''; const days=innerWidth<=820?7:14;
+ for(let d=0;d<days;d++){const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',40+(d/(days-1))*920);t.setAttribute('y',112);t.setAttribute('text-anchor','middle');t.setAttribute('font-family','IBM Plex Mono');t.setAttribute('font-size','10');t.setAttribute('fill',d===0?'#15130F':'#6B655C');t.textContent=DOW[d];ticks.appendChild(t);}
+ /* Friday chip */
+ const f=heroForecast(); const chip=$('#friChip'); const wrapRect=wrap.getBoundingClientRect();
+ const friX=wrapRect.left+wrapRect.width*(4/13); chip.style.left=friX+'px'; chip.style.top=(innerHeight*.60-8)+'px';
+ chip.textContent=`FRI ${fmtSigned(f.friday)}${f.friday<0?'':' · covered'}`;
+ chip.className='fri-chip '+(f.friday<0?'short':'ok');
+ /* HUD */
+ $('#hudCash').textContent=fmt(6000);
+ const spark=$('#hudSparkPath'); spark.setAttribute('d',(()=>{const pts=[];for(let d=0;d<14;d++){pts.push(`${(d/13)*220},${17-(f.series[d]/20000)*15}`);}return 'M'+pts.join(' L');})());
+ const hf=$('#hudFri'); hf.textContent=fmtSigned(f.friday); hf.className='big '+(f.friday<0?'neg':'pos');
+ $('#weekMeter').innerHTML=f.series.slice(0,7).map((v,i)=>`<i class="${v<0?'neg':''} ${i===4?'out':''}"></i>`).join('');
+ const low=$('#hudLow'); low.textContent=fmt(f.lowest); low.className='big '+(f.lowest<0?'neg':'pos');
+ $('#hudLowDay').textContent=f.lowestDay===21?'D+21 · crew, Lakshmi & Arjun':dayName(f.lowestDay);
+ $('#hudLowState').textContent=f.lowest<0?'short':'';
+ /* late tag / grease note positions */
+ const lt=$('#lateTag'); lt.style.left=(wrapRect.left+wrapRect.width*.32)+'px'; lt.style.top=(innerHeight*.60-64)+'px';
+ const gn=$('#greaseNote'); gn.style.left=(wrapRect.left+wrapRect.width*.42)+'px'; gn.style.top=(innerHeight*.60+52)+'px';
+ gn.textContent=`Fri ${fmtSigned(f.friday)} · Ravi ₹6,000 + LensHub ₹4,000`;
+}
+function applyHeroToggles(){drawHeroLine();$('#tglLate').setAttribute('aria-checked',heroState.late);$('#tglPay').setAttribute('aria-checked',heroState.pay);}
+$('#tglLate').addEventListener('click',()=>{heroState.late=!heroState.late;applyHeroToggles();});
+$('#tglPay').addEventListener('click',()=>{heroState.pay=!heroState.pay;applyHeroToggles();});
+/* intro sequence 600 / 2000 / 3300 / 4400ms — skipped / jumped if scrolled or reduced motion */
+let introDone=false;
+function introEnd(){introDone=true;heroState={late:true,pay:true};applyHeroToggles();$('#lateTag').style.opacity=1;$('#greaseNote').style.opacity=0;setDock('4 HELPERS READY · SAMPLE STUDIO LOADED');}
+function runIntro(){
+ if(reduced){introEnd();return;}
+ heroState={late:false,pay:false};applyHeroToggles();drawHeroLine(true);
+ setTimeout(()=>{if(introDone)return;heroState.late=true;applyHeroToggles();$('#lateTag').style.opacity=1;$('#greaseNote').style.opacity=1;setDock('SCOUT · FRI GOES SHORT BY ₹4,000',1);},2000);
+ setTimeout(()=>{if(introDone)return;heroState.pay=true;applyHeroToggles();$('#greaseNote').style.opacity=0;setDock('DOCK · ₹5,000 MATCHED TO INV-101',3);},3300);
+ setTimeout(()=>{if(introDone)return;introDone=true;setDock('4 HELPERS READY · SAMPLE STUDIO LOADED');celebrateHelpers();},4400);
+ setTimeout(()=>{if(!introDone)introEnd();},6000);
+}
+function celebrateHelpers(){worldHelpers.forEach(h=>{h.userData.setExpression('happy');});setTimeout(()=>worldHelpers.forEach(h=>h.userData.setExpression('idle')),1600);}
+/* ---------- §4 world 3D ---------- */
+const worldHelpers=[]; let worldScene,worldCam,worldRenderer,ridge,ridgeBase,ridgeStates,lanterns=[],tents=[],scraps=[],clouds=[],albumGroup,ananyaMesh,mendBlock,mendGhost,dockBoat;
+const hMap=b=>0.9+Math.sign(b)*Math.sqrt(Math.abs(b)/40000)*2.2;
+function makeTextSprite(text,fg='#15130F',bg='#FBF9F4'){const c=document.createElement('canvas');c.width=256;c.height=96;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,256,96);x.fillStyle=fg;x.font='500 26px "IBM Plex Mono",monospace';x.textAlign='center';x.fillText(text,128,56);const t=new THREE.CanvasTexture(c);const m=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.42),new THREE.MeshBasicMaterial({map:t,transparent:true,side:THREE.DoubleSide}));return m;}
+function initWorld(){
+ const canvas=$('#worldCanvas'); worldRenderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+ worldRenderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<=820?1.25:1.75)); worldRenderer.toneMapping=THREE.ACESFilmicToneMapping; worldRenderer.toneMappingExposure=1.05; worldRenderer.outputColorSpace=THREE.SRGBColorSpace;
+ worldScene=new THREE.Scene(); worldScene.fog=new THREE.Fog(0xE8E6E2,14,60); lights(worldScene);
+ worldCam=new THREE.PerspectiveCamera(30,innerWidth/innerHeight,.1,120);
+ albumGroup=new THREE.Group(); worldScene.add(albumGroup);
+ /* book block */
+ const pageGeo=new THREE.PlaneGeometry(14,9,64,16); const pos=pageGeo.attributes.position;
+ for(let i=0;i<pos.count;i++){const x=pos.getX(i);pos.setZ(i,Math.sin((x/14+0.5)*Math.PI)*.18);}
+ pageGeo.computeVertexNormals();
+ const pages=new THREE.Mesh(pageGeo,new THREE.MeshStandardMaterial({color:0xFBF8F1,roughness:.9,flatShading:true,side:THREE.DoubleSide})); pages.rotation.x=-Math.PI/2; pages.position.y=.15; albumGroup.add(pages);
+ for(let i=0;i<9;i++){const slab=new THREE.Mesh(new THREE.BoxGeometry(14.2-i*.5,.09,9.2-i*.3),new THREE.MeshStandardMaterial({color:[0xEEE8DC,0xE4DCCD,0xD9CFBE][i%3],roughness:.9}));slab.position.y=.08-i*.09;albumGroup.add(slab);}
+ const cover=new THREE.Mesh(new THREE.BoxGeometry(14.6,.14,9.6),new THREE.MeshStandardMaterial({color:0x2B2620,roughness:.85}));cover.position.y=-.78;albumGroup.add(cover);
+ const ribbon=new THREE.Mesh(new THREE.PlaneGeometry(.3,2.2),new THREE.MeshStandardMaterial({color:0xF2A900,side:THREE.DoubleSide}));ribbon.position.set(.4,-.4,4.6);albumGroup.add(ribbon);
+ /* ridge: 91 columns, 1 per day, stepped */
+ const N=91, geo=new THREE.BufferGeometry(); const verts=new Float32Array(N*2*3), cols=new Float32Array(N*2*3), idx=[];
+ ridgeBase=BASE().series; ridgeStates={base:BASE().series,late:LATE().series,rescued:RESCUED().series};
+ for(let d=0;d<N;d++){const x=-6.5+(d/90)*13;verts[d*6]=x;verts[d*6+1]=0;verts[d*6+2]=0;verts[d*6+3]=x;verts[d*6+4]=hMap(ridgeBase[d]);verts[d*6+5]=0;
+  if(d<N-1){const a=d*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
+ geo.setAttribute('position',new THREE.BufferAttribute(verts,3)); geo.setAttribute('color',new THREE.BufferAttribute(cols,3)); geo.setIndex(idx); geo.computeVertexNormals();
+ ridge=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,flatShading:true,side:THREE.DoubleSide}));
+ ridge.position.set(0,.16,0); albumGroup.add(ridge);
+ /* parallax ridges */
+ for(let k=0;k<3;k++){const g2=new THREE.BufferGeometry();const v2=new Float32Array(N*2*3);
+  for(let d=0;d<N;d++){const x=-6.5+(d/90)*13;const sm=(ridgeBase[Math.max(0,d-2)]+ridgeBase[d]+ridgeBase[Math.min(90,d+2)])/3;v2[d*6]=x;v2[d*6+1]=0;v2[d*6+2]=0;v2[d*6+3]=x;v2[d*6+4]=hMap(sm)*.92;v2[d*6+5]=0;}
+  g2.setAttribute('position',new THREE.BufferAttribute(v2,3));g2.setIndex(idx);
+  const m2=new THREE.Mesh(g2,new THREE.MeshStandardMaterial({color:[0xEFE9DD,0xE8DFD2,0xE2DACA][k],roughness:.9,flatShading:true,side:THREE.DoubleSide}));
+  m2.position.set(0,.16,-.6-k*.6); albumGroup.add(m2);}
+ /* vellum waterline */
+ const vellum=new THREE.Mesh(new THREE.PlaneGeometry(14,9),new THREE.MeshStandardMaterial({color:0xCFDDE3,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide}));
+ vellum.rotation.x=-Math.PI/2; vellum.position.y=.16+0.9; albumGroup.add(vellum);
+ /* day stakes + tents + lanterns */
+ for(let w=0;w<13;w++){const s=makeTextSprite('W'+(w+1));s.position.set(-6.5+w*1.08,.5,1.6);albumGroup.add(s);}
+ const today=makeTextSprite('TODAY','#F2A900');today.position.set(-6.5,.7,1.6);today.scale.setScalar(1.3);albumGroup.add(today);
+ const billDefs=[['Ravi ₹6,000',4],['LensHub ₹4,000',4],['EMI ₹7,500',8],['Kavya ₹5,000',15],['Crew ₹12,000',21],['Lab ₹9,000',35]];
+ billDefs.forEach(([label,day])=>{const t=new THREE.Group();const a=new THREE.Mesh(new THREE.PlaneGeometry(.5,.35),new THREE.MeshStandardMaterial({color:0xFBF9F4,side:THREE.DoubleSide}));a.rotation.y=.4;const b=a.clone();b.rotation.y=-.4;t.add(a,b);const lab=makeTextSprite(label);lab.scale.setScalar(.55);lab.position.y=.42;t.add(lab);t.position.set(-6.5+(day/90)*13,.16,1.1);t.userData.day=day;t.userData.label=label;albumGroup.add(t);tents.push(t);});
+ const incDefs=[['INV-104 ₹11,000',3,'#F2A900'],['INV-105 ₹15,000',6,'#F2A900'],['INV-103 ₹6,000',10,'#F2A900'],['INV-108 ₹20,000',30,'#F2A900']];
+ incDefs.forEach(([label,day])=>{const l=new THREE.Group();const lamp=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),new THREE.MeshStandardMaterial({color:0xF2A900,emissive:0xF2A900,emissiveIntensity:.5}));l.add(lamp);const lab=makeTextSprite(label);lab.scale.setScalar(.5);lab.position.y=.4;l.add(lab);l.position.set(-6.5+(day/90)*13,2.2,0);l.userData.day=day;l.userData.homeX=l.position.x;albumGroup.add(l);lanterns.push(l);});
+ /* scraps */
+ const scrapData=[["Reddy – 11k – Thu??","INV-104 · ₹11,000 · expected Thu ✓"],["Kiran bal 8k (pending!!)","INV-101 · ₹8,000 · reminder drafted ✓"],["Ramesh gari – pannendu velu","₹12,000 · Thu 15 Jan · you confirmed ✓"],["Lens rent 4k Fri","LensHub ₹4,000 · Fri · can move 7 days ✓"],["11k + 5k = 16k?","₹5,000 counted once ✓"],["LAKSHMI P ₹3,500 ??","Not a client payment · you chose ✓"],["balance_FINAL_v3.xlsx","One ledger ✓"],["EMI 7.5k – 8th","EMI ₹7,500 · every month ✓"],["sent 5k 👍","₹5,000 · INV-101 · matched ✓"]];
+ scrapData.forEach(([front,back],i)=>{const c=document.createElement('canvas');c.width=256;c.height=170;const x=c.getContext('2d');x.fillStyle='#FBF9F4';x.fillRect(0,0,256,170);x.fillStyle='#E0352B';x.font='700 22px Kalam, cursive';x.fillText(front,14,60,228);x.fillStyle='#1E9E5A';x.font='500 17px "IBM Plex Mono", monospace';x.fillText(back,14,110,228);const t=new THREE.CanvasTexture(c);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.8),new THREE.MeshStandardMaterial({map:t,side:THREE.DoubleSide,roughness:.9}));m.position.set(-3+(i%3)*3,1+i*.5,6+i*2.2);m.userData.z0=m.position.z;albumGroup.add(m);scraps.push(m);});
+ /* clouds */
+ const cc=document.createElement('canvas');cc.width=cc.height=512;const cx2=cc.getContext('2d');
+ for(let i=0;i<40;i++){const x=Math.random()*512,y=Math.random()*512,r=30+Math.random()*70;const g=cx2.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(255,255,255,.16)');g.addColorStop(1,'rgba(255,255,255,0)');cx2.fillStyle=g;cx2.beginPath();cx2.arc(x,y,r,0,7);cx2.fill();}
+ const cloudTex=new THREE.CanvasTexture(cc);
+ for(let i=0;i<14;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:cloudTex,transparent:true,depthWrite:false,opacity:.9}));const sc2=6+Math.random()*8;s.scale.set(sc2,sc2*.5,1);s.position.set((Math.random()-.5)*30,2+Math.random()*8,4+Math.random()*22);worldScene.add(s);clouds.push(s);}
+ /* helpers on album + Ananya cut-out */
+ const spots=[[-5.4,1.6],[-4.6,1.6],[-3.8,1.6],[-3.0,1.6]];
+ HELPERS.forEach((h,i)=>{const o=makeOrigami(h);o.position.set(spots[i][0],.16,spots[i][1]);o.scale.setScalar(.85);albumGroup.add(o);worldHelpers.push(o);});
+ dockBoat=worldHelpers[3]; dockBoat.userData.setSail('₹5,000 · INV-101');
+ const ac=document.createElement('canvas');ac.width=128;ac.height=200;const ax=ac.getContext('2d');ax.fillStyle='#15130F';ax.beginPath();ax.arc(64,42,26,0,7);ax.fill();ax.fillRect(44,66,40,110);ax.fillStyle='#F2A900';ax.fillRect(44,66,40,18);ax.strokeStyle='#15130F';ax.lineWidth=5;ax.strokeRect(84,84,34,26);
+ const am=new THREE.Mesh(new THREE.PlaneGeometry(.7,1.1),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(ac),transparent:true,side:THREE.DoubleSide}));
+ am.position.set(-6.5,.75,1.4);albumGroup.add(am);ananyaMesh=am;
+ /* MEND gap block (dashed look via wireframe-ish material) */
+ mendBlock=new THREE.Mesh(new THREE.BoxGeometry(.5,1,1),new THREE.MeshStandardMaterial({color:0xF2A900,transparent:true,opacity:.75}));mendBlock.position.set(-5.9,1.0,0);mendBlock.visible=false;albumGroup.add(mendBlock);
+ mendGhost=new THREE.Mesh(new THREE.BoxGeometry(.5,1,1),new THREE.MeshStandardMaterial({color:0xF2A900,transparent:true,opacity:.25}));mendGhost.position.set(-5.3,1.4,0);mendGhost.visible=false;albumGroup.add(mendGhost);
+ albumGroup.position.y=-.4;
+}
+const camCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,1.6,36),new THREE.Vector3(0,5,22),new THREE.Vector3(-3.5,4.2,11),new THREE.Vector3(-6.5,2.6,6.4),new THREE.Vector3(-7.6,1.7,4.2)]);
+const lookCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,-.6,0),new THREE.Vector3(0,.4,0),new THREE.Vector3(-5,1,0),new THREE.Vector3(-5.9,1.1,0)]);
+function updateRidge(w){
+ let a=ridgeStates.base,b=ridgeStates.base,t=0;
+ if(w>=.48&&w<.56){a=ridgeStates.base;b=ridgeStates.late;t=(w-.48)/.08;}
+ else if(w>=.56&&w<.70){a=b=ridgeStates.late;}
+ else if(w>=.70&&w<.78){a=ridgeStates.late;b=ridgeStates.rescued;t=(w-.70)/.08;}
+ else if(w>=.78){a=b=ridgeStates.rescued;}
+ const pos=ridge.geometry.attributes.position,col=ridge.geometry.attributes.color;
+ for(let d=0;d<91;d++){const bal=lerp(a[d],b[d],easeIO(t));const h=hMap(bal);pos.setY(d*2+1,h);
+  const below=bal<0?clamp(Math.abs(bal)/4000,0,1)*.4:0;col.setXYZ(d*2+1,1,1-below*.25,1-below*.1);}
+ pos.needsUpdate=true;col.needsUpdate=true;
+ /* lantern drift: INV-104 Thu -> D+18 during .48-.56 */
+ const l104=lanterns[0]; if(l104){const drift=smooth(clamp((w-.48)/.08,0,1));l104.position.x=lerp(l104.userData.homeX,-6.5+(18/90)*13,drift);}
+ /* tents red on short days in late window */
+ const lateOn=w>=.56&&w<.78;
+ tents.forEach(t=>{t.children.forEach(c=>{if(c.material&&c.material.color)c.material.color.set(lateOn&&t.userData.day===4?0xF6D9D7:0xFBF9F4);});});
+ mendBlock.visible=w>=.58&&w<.82; mendGhost.visible=w>=.58&&w<.82;
+ if(mendBlock.visible){const gapH=hMap(0)-hMap(-4000);mendBlock.scale.y=Math.max(.2,gapH);mendBlock.position.y=.16+0.9-gapH/2; if(w>=.78)mendBlock.material.color.set(0x1E9E5A);}
+}
+
+/* ---------- world scroll choreography ---------- */
+const crewCardData=[
+ {w0:.40,w1:.48,side:'left',dock:'JOT · READING THE NOTEBOOK',dockIdx:0},
+ {w0:.48,w1:.58,side:'right',dock:'SCOUT · FRI GOES SHORT BY ₹4,000',dockIdx:1},
+ {w0:.58,w1:.70,side:'left',dock:'MEND · EVEN HALF COVERS FRIDAY',dockIdx:2},
+ {w0:.70,w1:.80,side:'right',dock:'DOCK · ₹5,000 MATCHED TO INV-101',dockIdx:3}];
+$('#crewCards').innerHTML=HELPERS.map((h,i)=>{const c=crewCardData[i];return `<article class="crew-card ${c.side}" id="cc${i}" aria-live="polite"><div class="cc-head">${portraits[h.id]?`<img src="${portraits[h.id]}" alt="">`:''}<div><div class="mono" style="font-size:11px;letter-spacing:.12em">${h.id} · 0${i+1} <span style="color:${h.accent}">●</span></div><h3>${h.role}</h3></div></div><p>${h.body}</p><span class="chip">${h.chip}</span></article>`;}).join('');
+$('#vision').innerHTML='Photographers rarely go broke for lack of bookings. They go broke on <em>the Friday</em> a balance arrives late.'.split(' ').map(w=>`<span class="w">${w}</span> `).join('');
+function sectionProgress(el){const r=el.getBoundingClientRect();return clamp(-r.top/(el.offsetHeight-innerHeight),0,1);}
+let activeCrew=-1;
+function updateWorld(w,t,dt){
+ if(!worldRenderer)return;
+ const stage=$('#worldStage');
+ /* hero UI out .04-.14 */
+ const ho=smooth(clamp((w-.04)/.10,0,1));
+ $('#heroUI').style.opacity=1-ho; $('#heroUI').style.transform=`translateY(${ho*30}px)`;
+ $('#hud').style.opacity=1-ho; $('#hud').style.transform=`translateX(${ho*60}px)`;
+ const wmS=1+.3*smooth(clamp((w-.04)/.12,0,1));
+ $('#wordmarkWrap').style.transform=`translateY(-50%) scale(${wmS}) translateY(${-ho*8}vh)`; $('#wordmarkWrap').style.filter=`blur(${ho*14}px)`; $('#wordmarkWrap').style.opacity=1-ho*.95;
+ $('.hero-line').style.opacity=1-ho; $('.hero-line').style.filter=`blur(${ho*10}px)`;
+ $('#worldFill').style.transform=`scaleX(${w})`;
+ /* camera */
+ const u=easeIO(clamp((w-.08)/.28,0,1));
+ if(w<.36){const p=camCurve.getPoint(u);worldCam.position.copy(p);const lk=lookCurve.getPoint(clamp(u*1.2,0,1));worldCam.lookAt(lk);worldCam.fov=30+ (u<.5? u*20 : 10-(u-.5)*12);worldCam.updateProjectionMatrix();}
+ else if(w<.82){ /* orbit Friday */
+  const ow=clamp((w-.40)/.42,0,1),ang=-.6+ow*Math.PI*1.22,rad=lerp(3.6,4.4,ow),h=lerp(1.2,1.6,ow);
+  worldCam.position.set(-5.9+Math.cos(ang)*rad,h,Math.sin(ang)*rad);worldCam.lookAt(-5.9,1.0,0);worldCam.fov=34;worldCam.updateProjectionMatrix();}
+ else {const cw=smooth(clamp((w-.82)/.10,0,1));worldCam.position.lerp(new THREE.Vector3(0,11,10),cw*.2+ (cw>0?0:0));worldCam.position.set(lerp(worldCam.position.x,0,.08),lerp(worldCam.position.y,11,.08),lerp(worldCam.position.z,10,.08));worldCam.lookAt(0,.6,0);}
+ albumGroup.position.y=-.4+Math.sin(t*.001)*.12; albumGroup.rotation.y=Math.sin(t*.00002)*.02;
+ /* vision */
+ const vis=$('#vision'); const vIn=smooth(clamp((w-.18)/.06,0,1)),vOut=smooth(clamp((w-.32)/.04,0,1));
+ vis.style.opacity=vIn*(1-vOut); vis.style.filter=`blur(${(1-vIn)*16+vOut*10}px)`;
+ vis.querySelectorAll('.w').forEach((el,i)=>{const p=clamp((w-.18-i*.008)/.10,0,1);el.style.opacity=p;el.style.transform=`translateY(${(1-p)*20}px)`;el.style.letterSpacing=(.2-(.21*p))+'em';});
+ /* day counter + final line */
+ const dc=$('#dayCounter'); dc.style.opacity=w>=.36&&w<.92?1:0;
+ if(w>=.36){const day= w<.82? Math.round(lerp(0,21,clamp((w-.40)/.42,0,1))) : Math.round(lerp(21,90,clamp((w-.82)/.10,0,1))); dc.textContent=(day===0?'TODAY · MON':dayName(day)+' · D+'+day);}
+ const fl=$('#finalLine'); fl.style.opacity=smooth(clamp((w-.82)/.05,0,1))*(1-smooth(clamp((w-.90)/.06,0,1)));
+ $('#paperOut').style.transform=`translateY(${101-101*smooth(clamp((w-.90)/.10,0,1))}%)`;
+ worldScene.fog.color.setHex(w>.9?0xF5F1E8:0xE8E6E2);
+ /* ridge + scraps flip by camera distance */
+ updateRidge(w);
+ const camPos=worldCam.position;
+ scraps.forEach(s=>{const d=camPos.distanceTo(s.position);const flip=smooth(clamp((3-d)/2+ (w-.08)*2,0,1)); /* distance-driven, scrubbable */
+  s.rotation.y=Math.sin(t*.0004+s.position.x)*.2+flip*Math.PI;});
+ clouds.forEach(c=>{const d=camPos.distanceTo(c.position);c.material.opacity=d<2?.15:.9;});
+ /* crew cards + helpers */
+ let cur=-1; crewCardData.forEach((c,i)=>{const el=$('#cc'+i);const inn=smooth(clamp((w-c.w0)/.02,0,1)),out=smooth(clamp((w-(c.w1-.02))/.02,0,1));el.style.opacity=inn*(1-out);el.style.clipPath=`inset(0 ${ (1-inn)*100 }% 0 0)`;if(inn>.5&&out<.5)cur=i;});
+ if(cur!==activeCrew){activeCrew=cur;if(cur>=0){setDock(crewCardData[cur].dock,crewCardData[cur].dockIdx);}else if(w<.4)setDock('4 HELPERS READY · SAMPLE STUDIO LOADED');}
+ /* helper gestures as functions of w */
+ const jot=worldHelpers[0],scout=worldHelpers[1],mend=worldHelpers[2],dock=worldHelpers[3];
+ if(jot){const o=smooth(clamp((w-.40)/.06,0,1));jot.userData.wings.forEach((wg,i)=>wg.rotation.y=(i?-.5:.5)+o*(i?-.9:.9));jot.position.y=.16+Math.sin(t*.0025)*.012;}
+ if(scout){const fly=smooth(clamp((w-.48)/.08,0,1));scout.position.set(lerp(-4.6,-5.9,fly),.16+fly*1.2+Math.sin(t*.009)*.05,lerp(1.6,0,fly));scout.userData.wings.forEach((wg,i)=>wg.rotation.z=(i?-.5:.5)+Math.sin(t*.009)*.5*fly+Math.sin(t*.004)*.1);if(fly>.5)scout.userData.setExpression('alert');}
+ if(mend){const mw=smooth(clamp((w-.58)/.08,0,1));mend.position.x=lerp(-3.8,-5.2,mw);mend.userData.ears.forEach((e,i)=>e.rotation.z=Math.sin(t*.0044+i)*.17);mend.userData.trunk.forEach((s,i)=>s.rotation.x=.5+i*.25+Math.sin(t*.003+i)*.14);}
+ if(dock){const dw=smooth(clamp((w-.70)/.08,0,1));dock.position.set(lerp(-3.0,-6.2,dw),.16+Math.sin(t*.003)*.03,lerp(1.6,1.2,dw));dock.rotation.z=Math.sin(t*.003)*.05;}
+ worldHelpers.forEach(h=>{if(h.userData.head&&h!==dock)h.userData.head.rotation.y=Math.sin(t*.001)*.15;});
+ /* leader line */
+ const ll=$('#leaderLine'),ld=$('#leaderDot');
+ if(cur>=0&&worldHelpers[cur]){const v=new THREE.Vector3();worldHelpers[cur].getWorldPosition(v);v.y+=1.25;v.project(worldCam);const sx=(v.x*.5+.5)*innerWidth,sy=(-v.y*.5+.5)*innerHeight;const card=$('#cc'+cur);const r=card.getBoundingClientRect();const ex=card.classList.contains('left')?r.right:r.left,ey=r.top+r.height/2;ll.setAttribute('x1',sx);ll.setAttribute('y1',sy);ll.setAttribute('x2',ex);ll.setAttribute('y2',ey);ll.setAttribute('stroke',HELPERS[cur].accent);ld.setAttribute('cx',sx);ld.setAttribute('cy',sy);ld.setAttribute('fill',HELPERS[cur].accent);$('#leaderSvg').style.opacity=1;}
+ else $('#leaderSvg').style.opacity=0;
+ if(w>.05&&!introDone)introEnd();
+ worldRenderer.setSize(innerWidth,innerHeight,false); worldRenderer.render(worldScene,worldCam);
+}
+/* ---------- §5 drying line ---------- */
+const CATCOL={CAPTURE:'#3346D3',FORECAST:'#1FA2E0',RESCUE:'#F2A900',PAYMENTS:'#8E4FD8',TRUST:'#15130F'};
+const CASES=[
+ {n:1,title:'The Invoice That Lived in Chat',cat:'CAPTURE',helper:'JOT',hook:'Booked on chat. Never billed.',wrong:'Bookings get confirmed in chat at midnight. The invoice never gets made, so the money never appears in any plan.',does:'JOT reads the chat, drafts the invoice with the amount and date it found, and waits for you to confirm before anything is saved.',broken:'chat',fixed:'invoice'},
+ {n:2,title:'“After Sankranti”',cat:'CAPTURE',helper:'JOT',hook:'A promise without a date.',wrong:'Clients promise to pay “after the festival” or “after the album”. A promise with no date can\u2019t be planned around.',does:'JOT turns vague dates into a best guess, marks it as a guess, and asks you to confirm or change it.',broken:'notebook',fixed:'date'},
+ {n:3,title:'The Friday Nobody Saw',cat:'FORECAST',helper:'SCOUT',hook:'The bill lands before the balance.',wrong:'Crew and rentals are due on the shoot day. The client\u2019s balance arrives whenever it arrives. The gap only shows up when it\u2019s too late.',does:'SCOUT draws the next 30, 60 or 90 days, finds the first day a bill can\u2019t be covered, and shows what a late payment would do to it.',broken:'week',fixed:'chart'},
+ {n:4,title:'The Overdue Everyone Assumed',cat:'FORECAST',helper:'SCOUT',hook:'“They\u2019ll pay today” is not a forecast.',wrong:'Spreadsheets quietly treat overdue money as if it lands today, so the week looks safe when it isn\u2019t.',does:'SCOUT leaves overdue money out of the forecast until you give it a date, and suggests one based on how late that client usually pays.',broken:'assumed',fixed:'leftout'},
+ {n:5,title:'Chasing the Wrong Client',cat:'RESUCE',helper:'MEND',hook:'The biggest invoice isn\u2019t the one that matters.',wrong:'Under pressure, people chase the biggest or the friendliest invoice, not the one that protects the next bill.',does:'MEND ranks every action by how much it helps close the next short day, and tells you exactly how much to ask for and by when.',broken:'list',fixed:'chase'},
+ {n:6,title:'Delaying the Crew',cat:'RESUCE',helper:'MEND',hook:'Your second shooter is not a credit line.',wrong:'When cash is short, the easiest person to delay is the one who can least afford it: your crew.',does:'MEND never suggests moving a bill you\u2019ve marked can\u2019t-move. It shows it as excluded, with the reason, so you see why.',broken:'delay',fixed:'excluded'},
+ {n:7,title:'The Half That Looked Whole',cat:'PAYMENTS',helper:'DOCK',hook:'₹5,000 arrived. ₹6,000 didn\u2019t.',wrong:'A part payment gets ticked off as paid, and the rest of the balance disappears from view.',does:'DOCK records each payment against the invoice, marks it part-paid, and keeps the remaining balance in the forecast.',broken:'paid',fixed:'partpaid'},
+ {n:8,title:'Whose ₹3,500?',cat:'PAYMENTS',helper:'DOCK',hook:'Close enough is how ledgers lie.',wrong:'Bank narrations are messy. Matching by amount alone puts money against the wrong client.',does:'DOCK matches by the invoice reference first. When two clients could fit, it asks you instead of guessing.',broken:'bank',fixed:'choice'},
+ {n:9,title:'Counted Twice',cat:'TRUST',helper:'DOCK',hook:'Expected and received, both in the total.',wrong:'Money gets counted once when it\u2019s expected and again when it arrives, or a statement gets imported twice.',does:'DOCK moves money from expected to cash exactly once and skips any transaction it has already seen.',broken:'double',fixed:'once'},
+ {n:10,title:'The Plan That Lied',cat:'TRUST',helper:'MEND',hook:'Optimism is not a rescue plan.',wrong:'A plan that says “all covered” when it isn\u2019t is worse than no plan: you find out on the shoot day.',does:'MEND tests every combination of actions and, when none closes the gap, says how much is still uncovered and what to do next.',broken:'lied',fixed:'honest'}];
+CASES[4].cat='RESCUE';CASES[5].cat='RESCUE';
+const CATS=['ALL','CAPTURE','FORECAST','RESCUE','PAYMENTS','TRUST'];
+$('#tabs').innerHTML='<span class="tab-ind" id="tabInd"></span>'+CATS.map(c=>`<button role="tab" data-cat="${c}">${c}</button>`).join('');
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function printSVG(cs,mode){
+ const fixed=mode==='fixed'; const col=CATCOL[cs.cat];
+ const scenes={
+ chat:`<rect x="60" y="120" width="280" height="110" rx="16" fill="#fff" stroke="#ddd"/><text x="80" y="155" font-size="17" fill="#15130F">Done! Confirmed for 22 Jan,</text><text x="80" y="182" font-size="17" fill="#15130F">advance 20k next week 🙏</text>${fixed?'':`<text x="80" y="215" font-family="Kalam" font-size="20" fill="#E0352B">no invoice</text>`}`,
+ notebook:`<rect x="60" y="110" width="280" height="120" rx="6" fill="#fff" stroke="#ddd"/><text x="80" y="150" font-family="Kalam" font-size="19" fill="#15130F">Ramesh gari reception –</text><text x="80" y="180" font-family="Kalam" font-size="19" fill="#15130F">pannendu velu – Sankranti tarvata</text>${fixed?'':`<text x="80" y="212" font-family="Kalam" font-size="20" fill="#E0352B">when?</text>`}`,
+ week:`<rect x="50" y="110" width="300" height="60" rx="8" fill="#fff" stroke="#ddd"/><text x="66" y="138" font-size="15">Thu · Reddy ₹11,000 (maybe late)</text><text x="66" y="160" font-size="15">Fri · Ravi ₹6,000 + LensHub ₹4,000</text>${fixed?'':`<text x="66" y="200" font-family="Kalam" font-size="20" fill="#E0352B">short?</text>`}`,
+ assumed:`<rect x="60" y="110" width="280" height="90" rx="8" fill="#fff" stroke="#ddd"/><text x="80" y="145" font-size="16">Kiran &amp; Divya ₹8,000</text><text x="80" y="170" font-size="16">counted as arriving TODAY</text>${fixed?'':`<text x="80" y="225" font-family="Kalam" font-size="20" fill="#E0352B">assumed</text>`}`,
+ list:`<rect x="60" y="110" width="280" height="110" rx="8" fill="#fff" stroke="#ddd"/><text x="80" y="145" font-size="16">1 · Lakshmi &amp; Arjun ₹35,000</text><text x="80" y="172" font-size="16">2 · Kiran &amp; Divya ₹8,000</text>${fixed?'':`<text x="80" y="212" font-family="Kalam" font-size="20" fill="#E0352B">not due till D+40</text>`}`,
+ delay:`<rect x="60" y="110" width="280" height="90" rx="8" fill="#fff" stroke="#ddd"/><text x="80" y="150" font-size="17">Plan: Pay Ravi next week</text>${fixed?'':`<text x="80" y="225" font-family="Kalam" font-size="20" fill="#E0352B">crew can't wait</text>`}`,
+ paid:`<rect x="60" y="110" width="280" height="110" rx="8" fill="#fff" stroke="#ddd"/><text x="80" y="150" font-size="16">INV-104 · ₹11,000</text><text x="80" y="180" font-size="16">received ₹5,000 — PAID ✓</text>${fixed?'':`<text x="80" y="212" font-family="Kalam" font-size="20" fill="#E0352B">part-paid</text>`}`,
+ bank:`<rect x="50" y="110" width="300" height="70" rx="8" fill="#fff" stroke="#ddd"/><text x="66" y="140" font-size="13">UPI/CR/…/LAKSHMI P/ybl/payment</text><text x="66" y="162" font-size="15">₹3,500 → Sai Teja ✓</text>${fixed?'':`<text x="66" y="205" font-family="Kalam" font-size="20" fill="#E0352B">guessed</text>`}`,
+ double:`<rect x="60" y="110" width="280" height="90" rx="8" fill="#fff" stroke="#ddd"/><text x="80" y="150" font-size="17">expected 11,000 + received 5,000</text><text x="80" y="178" font-size="17">= 16,000</text>${fixed?'':`<text x="80" y="225" font-family="Kalam" font-size="20" fill="#E0352B">double</text>`}`,
+ lied:`<rect x="60" y="110" width="280" height="110" rx="8" fill="#fff" stroke="#ddd"/><text x="80" y="150" font-size="17">All covered! 🎉</text><text x="80" y="178" font-size="14">gap ₹33,000 · options ₹30,500</text>${fixed?'':`<text x="80" y="212" font-family="Kalam" font-size="20" fill="#E0352B">doesn't add up</text>`}`};
+ const fixedText={invoice:'INV-110 · Booking deposit ₹20,000 · due next Fri',date:'₹12,000 · Thu 15 Jan (best guess) · you confirmed ✓',chart:'Seen 4 days ahead · −₹4,000 if late',leftout:'Left out until you estimate · usually ~10 days late',chase:'Chase Kiran &amp; Divya first · ₹4,000 before Thu protects Fri',excluded:'Ravi · marked can\u2019t-move · excluded, with reason',partpaid:'Part-paid · ₹6,000 still due',choice:'Needs your choice · you picked: not a client payment ✓',once:'₹5,000 moved from expected to cash · counted once ✓ · re-import: 0 new',honest:'₹2,500 still uncovered · talk to Ravi before Friday'};
+ const key={chat:'chat',notebook:'notebook',week:'week',assumed:'assumed',list:'list',delay:'delay',paid:'paid',bank:'bank',double:'double',lied:'lied'}[cs.broken];
+ const fixedKey={invoice:'invoice',date:'date',chart:'chart',leftout:'leftout',chase:'chase',excluded:'excluded',partpaid:'partpaid',choice:'choice',once:'once',honest:'honest'}[cs.fixed];
+ let inner=scenes[key]||'';
+ if(fixed){inner=`<rect x="50" y="100" width="300" height="130" rx="8" fill="#fff" stroke="#1E9E5A" stroke-width="2"/><text x="66" y="140" font-size="14" fill="#15130F">${esc(fixedText[fixedKey]||'').slice(0,42)}</text><text x="66" y="165" font-size="14" fill="#15130F">${esc(fixedText[fixedKey]||'').slice(42,84)}</text><text x="66" y="190" font-size="14" fill="#15130F">${esc(fixedText[fixedKey]||'').slice(84)}</text><path d="M70 260 l14 14 l26 -30" fill="none" stroke="#1E9E5A" stroke-width="4"/>`;
+  if(cs.n===10) inner+=`<text x="200" y="300" font-family="IBM Plex Mono" font-size="18" fill="#15130F" transform="rotate(-8 200 300)">HONEST GAP</text>`;
+  else inner+=`<text x="200" y="300" font-family="IBM Plex Mono" font-size="20" fill="#1E9E5A" transform="rotate(-8 200 300)">FIXED ✓</text>`;}
+ else {inner+=`<ellipse cx="200" cy="170" rx="150" ry="95" fill="none" stroke="#E0352B" stroke-width="3" filter="url(#waxy)"/>`;}
+ return `<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="500" fill="#FBFAF6"/><rect x="18" y="18" width="364" height="380" fill="#F5F1E8"/><text x="30" y="46" font-family="Fraunces" font-size="16" font-style="italic">Ananya Rao Photography</text>${inner}<text x="30" y="470" font-family="IBM Plex Mono" font-size="12" letter-spacing="2">CASE № ${String(cs.n).padStart(2,'0')} · ${cs.cat}</text><circle cx="372" cy="34" r="9" fill="${col}"/></svg>`;
+}
+const stageEl=$('#printStage');
+const prints=[];
+for(let copy=0;copy<3;copy++)CASES.forEach((cs,i)=>{const d=document.createElement('div');d.className='print';d.dataset.case=i;d.dataset.copy=copy;
+ d.innerHTML=`<div class="peg"><svg width="18" height="38" viewBox="0 0 18 38"><rect x="3" y="4" width="12" height="30" rx="3" fill="#EAE4D6" stroke="#8a7f6a"/><rect x="7" y="12" width="4" height="6" fill="#888"/></svg></div><div class="face front">${printSVG(cs,'broken')}</div><div class="face back"><div class="kalam" style="font-size:20px;color:rgba(21,19,15,.55)">№ ${String(cs.n).padStart(2,'0')} · ${cs.cat}</div><div class="mono" style="font-size:10px;letter-spacing:.14em">CASHAHEAD LAB</div></div>`;
+ stageEl.appendChild(d);prints.push(d);});
+let lineS=10,lineT=10,activeCase=0,lineLift=new Map();
+function updateLine(p,t,dt){
+ lineT=10+p*9; const k=1-Math.exp(-5.2*dt); lineS+=(lineT-lineS)*k;
+ const H=Math.min(innerHeight*.48,innerWidth*.32),w=.8*H,gap=.12*H,W=innerWidth;
+ $('#stringPath').setAttribute('d',`M0 30 Q500 ${30+H*.06} 1000 30`);
+ const active=Math.round(lineS)%10; 
+ if(active!==activeCase){activeCase=active;const cs=CASES[active];
+  $('#capTitle h3').textContent=cs.title;$('#capTag .tag').innerHTML=`<span style="color:${CATCOL[cs.cat]}">${cs.cat} · CAUGHT BY ${cs.helper}</span>`;$('#capHook .hook').textContent=cs.hook;
+  setDock(`DEVELOPING CASE ${String(active+1).padStart(2,'0')} / 10`);
+  $$('#tabs button').forEach(b=>b.style.color=b.dataset.cat===cs.cat?'#15130F':'');
+  const ind=$('#tabInd'),btn=$(`#tabs button[data-cat="${cs.cat}"]`);if(btn){ind.style.left=btn.offsetLeft+'px';ind.style.width=btn.offsetWidth+'px';}
+ }
+ prints.forEach((el,idx)=>{const ci=+el.dataset.case,copy=+el.dataset.copy;const v=ci+copy*10;let r=v-lineS;while(r>15)r-=30;while(r<-15)r+=30;
+  const B=Math.abs(r)<1?(r+Math.sin(Math.PI*r)/Math.PI)/2:Math.sign(r)*.5;
+  const x=r*(.42*w+gap)+(.58*w+gap)*B; if(Math.abs(x)>W/2+1.5*w){el.style.display='none';return;} el.style.display='block';
+  const o=smooth(clamp(1-Math.abs(r),0,1));
+  const y=innerHeight*.22+Math.sin((x/W)*Math.PI)*H*.03;
+  const sway=reduced?0:1.2*Math.sin(1.3*t/1000+r)*(1-.7*o);
+  const lift=lineLift.get(el)||0; const tiltY=0,tiltX=0;
+  el.style.width=w+'px';el.style.height=H+'px';
+  el.style.transform=`translate3d(${x-w/2}px,${y}px,${o*.18*H}px) rotateZ(${sway}deg) rotateX(${tiltX*o}deg) rotateY(${-Math.sign(r||.01)*64*(1-o)}deg) translateY(${-lift*.04*H}px)`;
+  el.style.zIndex=Math.round(100-Math.abs(r)*4);
+  el.style.setProperty('--shade',clamp(.45*(1-o),0,.45));
+  el.dataset.r=r;
+  if(Math.abs(r)<.5){const rect=el.getBoundingClientRect();const ring=$('#developRing');ring.style.display='flex';ring.style.left=(rect.left+6)+'px';ring.style.top=(rect.bottom-48)+'px';}
+ });
+}
+function scrollToCase(i){const sec=$('#line');const p=clamp((i-10)/9,0,1);lenis.scrollTo(sec.offsetTop+p*(sec.offsetHeight-innerHeight),{duration:1});}
+prints.forEach(el=>el.addEventListener('click',()=>{const r=+el.dataset.r;if(Math.abs(r)<.6)openCase(+el.dataset.case);else scrollToCase(Math.round(lineS)+Math.round(r));}));
+$('#prevCase').addEventListener('click',()=>scrollToCase(Math.round(lineS)-1));
+$('#nextCase').addEventListener('click',()=>scrollToCase(Math.round(lineS)+1));
+$$('#tabs button').forEach(b=>b.addEventListener('click',()=>{const cat=b.dataset.cat;if(cat==='ALL')return;const i=CASES.findIndex(c=>c.cat===cat);if(i>=0)scrollToCase(10+i);}));
+addEventListener('keydown',e=>{if($('#detail').classList.contains('open')){if(e.key==='Escape')closeCase();return;}
+ if(e.key==='ArrowRight')scrollToCase(Math.round(lineS)+1); if(e.key==='ArrowLeft')scrollToCase(Math.round(lineS)-1); if(e.key==='Enter'&&document.activeElement?.classList.contains('print'))openCase(activeCase);});
+/* detail sheet */
+let lastFocus=null;
+function openCase(i){const cs=CASES[i];lastFocus=document.activeElement;const d=$('#detail');d.hidden=false;d.classList.add('open');lenis.stop();
+ $('#detailTag').innerHTML=`CASE № ${String(cs.n).padStart(2,'0')} · <b style="color:${CATCOL[cs.cat]}">${cs.cat}</b> · CAUGHT BY ${cs.helper}`;
+ $('#detailTitle').textContent=cs.title;$('#detailWrong').textContent=cs.wrong;$('#detailDoes').textContent=cs.does;
+ const h=HELPERS.find(x=>x.id===cs.helper);$('#detailHelper').innerHTML=`${portraits[h.id]?`<img src="${portraits[h.id]}" alt="">`:''}<div><div class="mono" style="font-size:11px;letter-spacing:.12em">${h.id} · ${h.role.toUpperCase()}</div><div style="font-size:13px;color:var(--mute)">SAMPLE STUDIO</div></div>`;
+ $('#traySvg').innerHTML=printSVG(cs,'broken');
+ const stamp=$('#trayStamp');stamp.textContent=cs.n===10?'HONEST GAP':'FIXED ✓';stamp.classList.toggle('ink',cs.n===10);stamp.style.opacity=0;
+ const rect=prints.find(p=>+p.dataset.case===i&&Math.abs(+p.dataset.r)<1)?.getBoundingClientRect();
+ if(rect&&d.animate&&!reduced){d.animate([{clipPath:`inset(${rect.top}px ${innerWidth-rect.right}px ${innerHeight-rect.bottom}px ${rect.left}px round 3px)`,transform:'rotate(-3deg)'},{clipPath:'inset(0 round 0)',transform:'rotate(0deg)'}],{duration:1050,easing:'cubic-bezier(.76,0,.18,1)',fill:'forwards'});}
+ setTimeout(()=>{const fixed=document.createElement('div');fixed.innerHTML=printSVG(cs,'fixed');fixed.style.cssText='position:absolute;inset:22px;opacity:0;transition:opacity 1.4s';$('#tray').appendChild(fixed);requestAnimationFrame(()=>fixed.style.opacity=1);setTimeout(()=>{stamp.style.opacity=1;stamp.style.transform='rotate(-8deg) scale(1)';},1400);},520);
+ $('#detailClose').focus();}
+function closeCase(){const d=$('#detail');d.classList.remove('open');d.hidden=true;lenis.start();$$('#tray > div').forEach(x=>{if(x.id!=='traySvg')x.remove();});if(lastFocus)lastFocus.focus();}
+$('#detailClose').addEventListener('click',closeCase);
+$('#detailGoto').addEventListener('click',e=>{e.preventDefault();closeCase();lenis.scrollTo('#desk',{duration:1.2});});
+
+/* ---------- §6 rescue desk ---------- */
+const SCENARIOS=[
+ {name:'Reddy–Varma pays late',client:'Kiran & Divya',av:'KD',note:'usually ~10 days late',
+  scenario:()=>forecast(STUDIO,{moveIncome:{id:'INV-104',day:18}},90),
+  matched:()=>forecast(STUDIO,{moveIncome:{id:'INV-104',day:18},addPayments:[{amount:5000,day:2,invoice:'INV-101'}]},90),
+  plans:[{t:'Ask Kiran & Divya for ₹8,000',c:'Medium',rec:true,note:'counts ₹4,000 · closes ✓'},{t:'Move LensHub 7 days',c:'High',note:'Fri ₹0'},{t:'Lakshmi & Arjun deposit early',c:'Medium',note:'Fri +₹11,000'},{t:'Sai Teja pull-forward alone',c:'Low',note:'Fri −₹500'}],
+  excluded:'Ravi · can\u2019t move',
+  log:["> read    notebook_mon.jpg   6 lines · 1 needs a date","> what-if INV-104 Reddy–Varma +15 days   Thu → D+18","> spot    Fri  +₹7,000 → −₹4,000   bills: Ravi ₹6,000 · LensHub ₹4,000","> plan    ask Kiran & Divya ₹8,000   medium · counts ₹4,000   closes ✓","> plan    alt: move LensHub 7 days (high) · Lakshmi & Arjun deposit early (medium)","> plan    excluded: Ravi · can\u2019t move","> send    reminder TE · firm · pay link INV-101 · drafted, you send","> match   UPI/CR/432198765012/KIRAN KUMAR/okicici/INV-101  ₹5,000 → INV-101 (ref)","> ✓       Fri −₹4,000 → +₹1,000 · INV-101 ₹3,000 still due · Ananya confirmed"],
+  stamp:'COVERED · FRI +₹1,000 · ANANYA CONFIRMED · WED 20:30',stampInk:false,clientEnd:'Paid ₹5,000 ✓ · ₹3,000 still due',queue:'NEXT UP: A PROMISE WITH NO DATE →'},
+ {name:'A promise with no date',client:'Kiran & Divya',av:'KD',note:'promised next Monday',
+  scenario:()=>forecast(STUDIO,{addPayments:[{amount:8000,day:7,invoice:'INV-101'}]},90),
+  matched:()=>forecast(STUDIO,{addPayments:[{amount:8000,day:7,invoice:'INV-101'}]},90),
+  plans:[{t:'No gap. Nothing to rescue.',c:'—',rec:true,note:'quiet green ✓'}],
+  excluded:'',
+  log:["> read    chat: Kiran: will pay the full balance next Monday 🙏","> spot    no short day · tightest day D+21 ₹5,500 → ₹13,500","> plan    no gap · nothing to rescue ✓","> send    friendly reminder drafted for Sunday, the day before","> match   next Mon: ₹8,000 …/INV-101 → INV-101 paid ✓ · promise kept ✓"],
+  stamp:'PROMISE KEPT · INV-101 PAID',stampInk:false,clientEnd:'Paid ₹8,000 ✓ · promise kept',queue:'NEXT UP: THE GAP NOTHING CLOSES →'},
+ {name:'The gap nothing closes',client:'Ravi · crew',av:'RV',note:'3-day wedding crew',
+  scenario:()=>forecast(STUDIO,{moveIncome:{id:'INV-104',day:18},replaceBill:{label:'Ravi · second shooter (crew)',amount:35000}},90),
+  matched:()=>forecast(STUDIO,{moveIncome:{id:'INV-104',day:18},replaceBill:{label:'Ravi · second shooter (crew)',amount:35000}},90),
+  plans:[{t:'Kiran & Divya ₹8,000',c:'Medium',note:'counts ₹4,000'},{t:'Lakshmi & Arjun deposit early ₹15,000',c:'Medium',note:''},{t:'Move LensHub ₹4,000',c:'High',note:''},{t:'Sai Teja ₹3,500',c:'Low',note:'total ₹30,500 of ₹33,000'}],
+  excluded:'',
+  log:["> read    notebook: Ravi – 3-day wedding crew – 35k – Fri","> what-if INV-104 +15 days · Ravi bill ₹35,000","> spot    Fri +₹7,000 → −₹33,000","> plan    all four actions stacked: ₹30,500 of ₹33,000","> plan    ₹2,500 still uncovered · talk to Ravi before Friday","> send    drafts to three clients + a draft message to Ravi","> match   waiting for replies · nothing is counted until it arrives"],
+  stamp:'HONEST GAP · ₹2,500 · FLAGGED',stampInk:true,clientEnd:'Waiting for replies',queue:'ALL SCENARIOS FILED · 3/3'}];
+let deskRenderer,deskScene,deskCam,deskHelpers=[],packet;
+function initDesk(){
+ const canvas=$('#deskCanvas'); deskRenderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+ deskRenderer.setPixelRatio(Math.min(devicePixelRatio,1.75)); deskRenderer.toneMapping=THREE.ACESFilmicToneMapping; deskRenderer.toneMappingExposure=1.05; deskRenderer.outputColorSpace=THREE.SRGBColorSpace;
+ deskScene=new THREE.Scene(); lights(deskScene);
+ deskCam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.1,50); deskCam.position.set(0,4.4,6.6); deskCam.lookAt(0,.4,0);
+ const table=new THREE.Mesh(new THREE.BoxGeometry(4.6,.2,2.8),new THREE.MeshStandardMaterial({color:0xFFFDF6,emissive:0xFFFDF6,emissiveIntensity:.35,roughness:.6}));table.position.y=.1;deskScene.add(table);
+ const rim=new THREE.Mesh(new THREE.BoxGeometry(4.7,.06,2.9),new THREE.MeshStandardMaterial({color:0x15130F}));rim.position.y=-.02;deskScene.add(rim);
+ const spots=[[-2.6,1.0],[2.6,1.0],[-2.9,-1.2],[2.9,-1.2]];
+ HELPERS.forEach((h,i)=>{const o=makeOrigami(h);o.position.set(spots[i][0],.2,spots[i][1]);o.scale.setScalar(.8);o.lookAt(0,.4,0);deskScene.add(o);deskHelpers.push(o);});
+ packet=new THREE.Mesh(new THREE.ConeGeometry(.12,.3,4),new THREE.MeshStandardMaterial({color:0xF2A900,flatShading:true}));packet.visible=false;deskScene.add(packet);
+}
+function renderWeekSheet(f,q,scenIdx){
+ const sc=SCENARIOS[scenIdx]; const s=f.series;
+ $('#weekDays').innerHTML=DOW.map((d,i)=>{const bal=s[i];const inn=i===3?11000:0;const out=i===4?10000:0;
+  return `<div class="day-frame ${i===4&&bal<0?'short':''}"><div class="dow">${d}</div><div class="amt">${inn?'🏮 +'+fmt(inn):''}</div><div class="amt">${out?'⛺ −'+fmt(out):''}</div><div class="bal ${bal<0?'neg':'pos'}">${fmtSigned(bal)}</div></div>`;}).join('');
+ const pts=s.slice(0,7).map((v,i)=>`${(i/6)*520},${17-(v/20000)*15}`).join(' ');
+ $('#weekLinePath').setAttribute('d','M'+pts.replaceAll(' ',', ' ).replaceAll(',',' ' ).replace(/ /g,' L').replace('M','M'));
+ /* simpler: rebuild path properly */
+ $('#weekLinePath').setAttribute('d','M'+s.slice(0,7).map((v,i)=>`${(i/6)*520} ${17-(v/20000)*15}`).join(' L'));
+}
+function updateDesk(p,t){
+ if(!deskRenderer)return;
+ const scenIdx=clamp(Math.floor(p*3),0,2); const q=clamp(p*3-scenIdx,0,1);
+ const sc=SCENARIOS[scenIdx]; $('#deskCount').textContent=`SCENARIO ${scenIdx+1}/3`;
+ $('#clientName').textContent=sc.client; $('#clientAv').textContent=sc.av; $('#clientNote').textContent=sc.note;
+ /* phase */
+ const phases=['Read.','Spot.','Plan.','Send.','Match.']; const ph=q<.22?0:q<.36?1:q<.58?2:q<.72?3:q<.90?4:4;
+ $$('#deskHeadline span').forEach((el,i)=>el.classList.toggle('on',i===ph));
+ const baseF=BASE(), scenF=sc.scenario(), matchF=sc.matched();
+ const shown=q<.22?baseF:q<.72?scenF:matchF;
+ renderWeekSheet(shown,q,scenIdx);
+ const friEl=$('#deskFri'); const friVal=q<.22?7000:q<.72?scenF.friday:matchF.friday;
+ friEl.textContent=fmtSigned(friVal); friEl.className='big-fri '+(friVal<0?'neg':'pos');
+ $('#deskGap').textContent=scenIdx===2&&q>=.36?'gap ₹33,000 · ₹2,500 still uncovered':friVal<0?`gap ${fmt(-friVal)}`:'gap ₹0';
+ $('#planRows').innerHTML=q>=.36?sc.plans.map(pl=>`<div class="plan-row ${pl.rec?'rec':''}"><div style="flex:1">${pl.t}<div style="font-size:12px;color:var(--mute)">${pl.note||''}</div></div><span class="conf">${pl.c}</span></div>`).join('')+(sc.excluded?`<div class="plan-row ex">Ravi · can\u2019t move — ${sc.excluded}</div>`:''):'';
+ if(scenIdx===2&&q>=.36)$('#planRows').innerHTML+=`<div class="kalam" style="color:var(--short);font-size:17px;margin-top:8px">₹2,500 still uncovered</div><div style="font-size:13px">Next step: talk to Ravi before Friday.</div>`;
+ /* log typing */
+ const full=sc.log.join('\n'); const chars=Math.floor(full.length*clamp(q/.9,0,1));
+ $('#deskLog').textContent=full.slice(0,chars);
+ /* client chip + send bubble + bank row */
+ $('#clientStatus').textContent=q<.58?'Not asked':q<.72?'Reminder drafted · you send':sc.clientEnd;
+ const bub=$('#sendBubble'); bub.style.opacity=q>=.58&&q<.72?1:0; bub.style.transform=`translate(${lerp(40,0,clamp((q-.58)/.14,0,1))}px,${lerp(30,0,clamp((q-.58)/.14,0,1))}px)`;
+ bub.style.left='62%'; bub.style.top='30%';
+ const bank=$('#bankRow'); bank.style.opacity=q>=.72&&q<.90&&scenIdx!==2?1:0;
+ const stamp=$('#deskStamp'); stamp.textContent=sc.stamp; stamp.classList.toggle('ink',sc.stampInk);
+ stamp.style.opacity=q>=.90?1:0; stamp.style.transform=`translate(-50%,-50%) rotate(-8deg) scale(${q>=.90?1:1.4})`;
+ $('#filedCount').textContent=`SCENARIOS FILED ${scenIdx+(q>=.95?1:0)}/3`;
+ $('#queueLine').textContent=sc.queue;
+ /* sheet in/out */
+ const sheet=$('#weekSheet'); const inn=smooth(clamp(q/.08,0,1)), out=smooth(clamp((q-.90)/.10,0,1));
+ sheet.style.transform=`translate(-50%,-50%) perspective(1200px) rotateX(12deg) rotateY(${-25*(1-inn)+ -4*out}deg) translateX(${55*(1-inn)-30*out}vw) scale(${1-.25*out})`;
+ sheet.style.opacity=1-out*.9;
+ if(q>=.08&&q<.22)setDock('SCENARIO '+(scenIdx+1)+'/3 · MEND IS PLANNING',2);
+ if(q>=.90)setDock('WAITING ON ANANYA · CONFIRM');
+ /* helpers idle + handoff packet */
+ deskHelpers.forEach((h,i)=>{h.position.y=.2+Math.sin(t*.002+i)*.015; if(h.userData.wings)h.userData.wings.forEach(w=>w.rotation.z=Math.sin(t*.004+i)*.1);});
+ const hop=q>=.22&&q<.72?Math.floor((q-.22)/.125):-1;
+ if(hop>=0&&hop<3){packet.visible=true;const a=deskHelpers[hop].position,b=deskHelpers[hop+1].position;const u=clamp(((q-.22)%.125)/.125,0,1);packet.position.lerpVectors(a,b,u);packet.position.y=1.2+Math.sin(u*Math.PI)*.6;packet.material.color.set(HELPERS[hop+1].accent);}
+ else packet.visible=false;
+ deskRenderer.setSize(innerWidth,innerHeight,false); deskRenderer.render(deskScene,deskCam);
+}
+/* ---------- §7 slider ---------- */
+const SLIDES=[
+ {t:['READS YOUR','NOTEBOOK'],sky:'linear-gradient(180deg,#1B2A6B,#4F6BD8 55%,#C9D3FF)',helper:0,capH:'Notebook, chat & voice intake',capP:'Messy notes become invoices, bills and promises. Nothing is saved until you confirm.',vig:`<h4>A photographed notebook page</h4><div class="vrow">INV-110 · booking deposit ₹20,000 ✓</div><div class="vrow hl">Check the date — “after Sankranti”</div><div class="vrow bad">Amount missing — ask Ananya</div><div class="vrow">🎙 Telugu voice note · 6s</div>`},
+ {t:['SEES FRIDAY','COMING'],sky:'linear-gradient(180deg,#0F3346,#2C7DA0 55%,#BFE3F2)',helper:1,capH:'30–90 day forecast & what-if',capP:'See the first day a bill can\u2019t be covered, and what one late payment would change.',vig:`<h4>30 / 60 / 90 days</h4><div class="vrow">Fri · −₹4,000 if Reddy–Varma pays 15 days late</div><div class="vrow hl">Friday flagged on Monday</div><div class="vrow">Waterline ₹0 · 90-day ridge</div>`},
+ {t:['FILLS THE','GAP'],sky:'linear-gradient(180deg,#4A2308,#D9821F 55%,#FFE0A3)',helper:2,capH:'Rescue plan',capP:'Every mix of actions tested. The plan that still works, or an honest gap.',vig:`<h4>Rescue plan</h4><div class="vrow hl">Recommended · ask Kiran &amp; Divya ₹8,000 · even if they pay half</div><div class="vrow">Move LensHub 7 days · High</div><div class="vrow bad">Ravi · can\u2019t-move · excluded</div><div class="vrow">₹0 still uncovered</div>`},
+ {t:['BRINGS IT','HOME'],sky:'linear-gradient(180deg,#2A0F33,#8E3F9C 55%,#F3C9F0)',helper:3,capH:'Reminders & bank matching',capP:'Pay links carry the invoice number. Payments are matched once, and you confirm each one.',vig:`<h4>Reminder · INV-101</h4><div class="vrow">UPI/CR/…/INV-101 · ₹5,000</div><div class="vrow hl">matched by reference ✓</div><div class="vrow">re-import: 0 new · counted once ✓</div>`}];
+let curSlide=0,slideTimer=null,wipeRAF=null;
+function buildSlides(){
+ $('#slides').innerHTML=SLIDES.map((s,i)=>`<div class="slide" data-i="${i}" style="z-index:${i===0?2:1};clip-path:inset(0 0 0 0)"><div class="sky" style="background:${s.sky}"></div><div class="tint"></div><h2>${s.t.map(w=>`<span class="wm"><span>${w}</span></span>`).join('')}</h2><div class="vignette">${s.vig}</div></div>`).join('');
+ $('#rail').innerHTML=SLIDES.map((s,i)=>{const h=HELPERS[s.helper];return `<button class="thumb ${i===0?'active':''}" data-slide="${i}" aria-label="Feature ${i+1}: ${s.capH}" style="width:${i===0?150:64}px;height:${i===0?150:64}px">${portraits[h.id]?`<img src="${portraits[h.id]}" alt="${h.id}">`:''}</button>`;}).join('');
+ updateRailCaption(0);
+ $$('#rail .thumb').forEach(b=>b.addEventListener('click',()=>goSlide(+b.dataset.slide)));
+}
+function updateRailCaption(i){$('#railCapH').textContent=SLIDES[i].capH;$('#railCapP').textContent=SLIDES[i].capP;setDock(SLIDES[i].capH.toUpperCase(),SLIDES[i].helper);}
+function goSlide(next){
+ if(next===curSlide||wipeRAF)return; const prev=curSlide; curSlide=next;
+ const slides=$$('#slides .slide'); const incoming=slides[next],outgoing=slides[prev];
+ incoming.style.zIndex=3; outgoing.style.zIndex=2;
+ $$('#rail .thumb').forEach((b,i)=>{const act=i===next;b.classList.toggle('active',act);b.style.width=act?'150px':'64px';b.style.height=act?'150px':'64px';});
+ updateRailCaption(next);
+ const start=performance.now(),DUR=1250;
+ const leak=$('#leak');
+ function frame(now){const p=clamp((now-start)/DUR,0,1),e=easeIO(p);
+  incoming.style.clipPath=`inset(0 0 0 ${100-e*135}%)`;
+  incoming.querySelector('.sky').style.transform=`scale(${lerp(1.12,1.04,e)}) translateX(${lerp(2,0,e)}%)`;
+  outgoing.querySelector('.sky').style.transform=`scale(${lerp(1.04,1.09,e)}) translateX(${lerp(0,-2,e)}%)`;
+  leak.style.opacity=Math.sin(Math.PI*e)*.95; leak.style.left=`calc(${(1-e)*100}% - 17vw)`;
+  if(p<1)wipeRAF=requestAnimationFrame(frame);else{wipeRAF=null;outgoing.style.clipPath='inset(0 0 0 100%)';outgoing.style.zIndex=1;incoming.style.clipPath='inset(0 0 0 0)';leak.style.opacity=0;}}
+ wipeRAF=requestAnimationFrame(frame);
+}
+function sliderAuto(){clearInterval(slideTimer);slideTimer=setInterval(()=>{const r=$('#slider').getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0&&!document.querySelector(':focus'))goSlide((curSlide+1)%4);},5200);}
+/* bokeh */
+(function(){const c=document.createElement('canvas');c.width=2048;c.height=1024;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,2048,1024);
+ for(let i=0;i<160;i++){const px=Math.random()*2048,py=512+Math.random()*512,r=10+Math.random()*80,a=.05+Math.random()*.11;const g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,`rgba(255,244,225,${a})`);g.addColorStop(.8,`rgba(255,244,225,${a*.6})`);g.addColorStop(1,'rgba(255,244,225,0)');x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,7);x.fill();x.strokeStyle=`rgba(255,244,225,${a*1.4})`;x.beginPath();x.arc(px,py,r*.92,0,7);x.stroke();}
+ x.filter='blur(6px)';x.drawImage(c,0,0);const url=c.toDataURL();$('#bokehFront').src=url;$('#bokehBack').src=url;})();
+/* what-if bar */
+let wiBillDay=4,wiPayDay=3,wiLate=15;
+const DAYS7=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+function popover(el,days,cur,cb){el.innerHTML=DAYS7.map((d,i)=>`<button data-d="${i}">${d}</button>`).join('')+DAYS7.map((d,i)=>`<button data-d="${i+7}">next ${d}</button>`).join('');el.classList.add('open');el.querySelectorAll('button').forEach(b=>b.onclick=()=>{cb(+b.dataset.d);el.classList.remove('open');});}
+$('#wiBillDay').addEventListener('click',e=>{e.stopPropagation();popover($('#popBill'),DAYS7,wiBillDay,d=>{wiBillDay=d;$('#wiBillDay').textContent=(d<7?DAYS7[d]:'next '+DAYS7[d-7])+' ▾';});});
+$('#wiPayDay').addEventListener('click',e=>{e.stopPropagation();popover($('#popPay'),DAYS7,wiPayDay,d=>{wiPayDay=d;$('#wiPayDay').textContent=(d<7?DAYS7[d]:'next '+DAYS7[d-7])+' ▾';});});
+document.addEventListener('click',()=>$$('.whatif .pop').forEach(p=>p.classList.remove('open')));
+$('#wiLateMinus').addEventListener('click',()=>{wiLate=clamp(wiLate-1,0,30);$('#wiLateVal').textContent=wiLate+'d';});
+$('#wiLatePlus').addEventListener('click',()=>{wiLate=clamp(wiLate+1,0,30);$('#wiLateVal').textContent=wiLate+'d';});
+const parseRs=v=>parseInt(String(v).replace(/[^0-9]/g,''),10)||0;
+$('#wiCheck').addEventListener('click',()=>{
+ const cash=parseRs($('#wiCash').value),bill=parseRs($('#wiBill').value),pay=parseRs($('#wiPay').value);
+ const arrival=wiPayDay+wiLate; const bal=cash+(arrival<=wiBillDay?pay:0)-bill;
+ const res=$('#whatifResult'); res.classList.add('open');
+ res.innerHTML=`<div style="display:flex;gap:10px;align-items:center">${portraits.SCOUT?`<img src="${portraits.SCOUT}" style="width:44px;height:44px;border-radius:50%;object-fit:cover" alt="">`:''}<b>Running your week…</b></div>`;
+ setTimeout(()=>{
+  const strip=Array.from({length:7},(_,i)=>{const b=cash+(wiPayDay+wiLate<=i?pay:0)-(i===wiBillDay?bill:0);return `<i class="${b<0?'neg':''} ${i===wiBillDay?'out':''}"></i>`;}).join('');
+  const low=Math.min(...Array.from({length:7},(_,i)=>cash+(wiPayDay+wiLate<=i?pay:0)-(i===wiBillDay?bill:0)));
+  res.innerHTML=bal<0
+   ?`<div class="res neg">⚠ ${DAYS7[wiBillDay%7]}: ${fmtSigned(bal)}. You’re short by ${fmt(-bal)} for the ${fmt(bill)} bill.</div><p style="font-size:14px;color:var(--mute)">Ask for ${fmt(-bal)} before ${DAYS7[wiPayDay%7]}, or move part of the bill.</p><a class="btn btn-brand" style="margin-top:10px" href="/app">Open the rescue plan in the app →</a><div class="mini-strip">${strip}</div>`
+   :`<div class="res pos">✓ ${DAYS7[wiBillDay%7]}: ${fmtSigned(bal)}. Covered.</div><p style="font-size:14px;color:var(--mute)">Lowest point this week: ${fmt(low)} on ${DAYS7[0]}.</p><div class="mini-strip">${strip}</div>`;
+ },reduced?0:700);
+});
+/* ---------- §8 carousel ---------- */
+const CARDS=[
+ {lang:'EN · FRIENDLY',chip:'✎ DRAFT · YOU SEND',body:'Hi Lakshmi & Arjun, a gentle reminder that your booking deposit of ₹15,000 is due on Sunday. Pay here: <b>upi://pay?pa=ananya.sample@demo&amp;am=15000</b> (INV-105). – Ananya'},
+ {lang:'TE · FIRM',chip:'✎ DRAFT · YOU SEND',body:'<span class="telugu">నమస్కారం కిరణ్ గారు, ఎంగేజ్‌మెంట్ షూట్ బ్యాలెన్స్ ₹8,000 ఇంకా రావాలి. ఈ లింక్‌తో చెల్లించవచ్చు (INV-101). ధన్యవాదాలు! – అనన్య</span>'},
+ {lang:'EN · FINAL',chip:'✎ DRAFT · YOU SEND',body:'Hi Sai Teja, the ₹3,500 for the birthday shoot was promised for Saturday and is still pending. Please pay today: <b>upi://pay?pa=ananya.sample@demo&amp;am=3500</b> (INV-102).'},
+ {lang:'HI · FRIENDLY',chip:'✎ DRAFT · YOU SEND',body:'<span class="hindi">नमस्ते दिव्या जी, एंगेजमेंट शूट का ₹8,000 बाकी है। इस लिंक से भुगतान कर सकते हैं (INV-101)। धन्यवाद! – अनन्या</span>'},
+ {lang:'PAY LINK',chip:'✎ DRAFT · YOU SEND',body:'<b>QR · UPI</b><br>ananya.sample@demo · ₹8,000 · INV-101<br><span class="mono" style="font-size:12px">the invoice number travels with the payment</span><br><span style="font-size:42px;letter-spacing:2px">▦▤▧▨▩</span>'},
+ {lang:'BANK MATCH',chip:'✓ MATCHED',chipOk:true,body:'UPI/CR/432198765012/KIRAN KUMAR/okicici/INV-101 · ₹5,000<br>→ <b>INV-101 · Kiran &amp; Divya</b><br><span style="color:var(--covered)">matched by reference ✓</span>'},
+ {lang:'PROMISE',chip:'✎ DRAFT · YOU SEND',body:'Ramesh: “Sankranti tarvata” → <b>Thu 15 Jan · best guess · you confirmed</b>'},
+ {lang:'TODAY',chip:'✎ DRAFT · YOU SEND',body:'Chase Kiran &amp; Divya today: <b>₹4,000 before Thu</b> covers Friday’s crew and lens rental.'},
+ {lang:'RESCUE',chip:'✎ DRAFT · YOU SEND',body:'<b>Even if they pay half, Friday is covered.</b><br><span class="mono" style="font-size:12px">gap bar ████████░░ to the waterline</span>'},
+ {lang:'DUPLICATE',chip:'✓ MATCHED',chipOk:true,body:'statement_nov.csv · 3 rows · 0 new · 3 already imported<br><span style="color:var(--covered)">counted once ✓</span>'}];
+$('#carTrack').innerHTML=CARDS.map((c,i)=>`<div class="car-card" data-i="${i}"><div class="inner"><span class="lang">${c.lang}</span><h5>CARD ${String(i+1).padStart(2,'0')} · SAMPLE STUDIO</h5><div class="body">${c.body}</div><span class="chip ${c.chipOk?'ok':''}">${c.chip}</span></div></div>`).join('');
+let carOffset=0,carVel=0,carDrag=null,carLastT=0;
+function carFrameScale(){return Math.min(innerWidth/1440,innerHeight/1080);}
+function updateCarousel(t,dt){
+ const frame=$('#carFrame'); if(!frame)return; const u=innerWidth<=820?640/1440:1;
+ frame.style.transform=`translate(-50%,-50%) scale(${carFrameScale()})`;
+ if(!carDrag){carVel*=Math.pow(.95,dt/1000*60/60); carOffset-= (50*dt/1000) + carVel*dt/1000; carVel*=.995;}
+ const pitch=196,total=CARDS.length*pitch;
+ $$('#carTrack .car-card').forEach((el,i)=>{
+  let x=((i*pitch+carOffset)%total+total)%total; if(x>total/2)x-=total;
+  const cx=720+x; const d=Math.abs(cx-720)/706; const tt=(cx-720);
+  const px=720+tt*(1+.083*Math.pow(tt/706,2));
+  const wdt=(170+48*d*d)*u, hgt=(280+92*Math.pow(d,2.6))*u;
+  el.style.transform=`translate(${px-wdt/2}px,${687-12*d*d-140}px)`;
+  const inner=el.querySelector('.inner'); inner.style.width='384px'; inner.style.height='540px';
+  inner.style.transform=`scale(${wdt/384},${hgt/540})`;
+  el.style.zIndex=Math.round(100-d*50);
+ });
+}
+$('#carFrame').addEventListener('pointerdown',e=>{carDrag={x:e.clientX,off:carOffset};carVel=0;});
+addEventListener('pointermove',e=>{if(carDrag){const dx=e.clientX-carDrag.x;carOffset=carDrag.off+dx;carVel=dx/16;}});
+addEventListener('pointerup',()=>{carDrag=null;});
+$$('#carTrack .car-card').forEach(el=>el.addEventListener('pointerenter',e=>{const tip=$('#carTip');const r=el.getBoundingClientRect();tip.style.display='block';tip.style.left=(r.left+r.width/2-180)+'px';tip.style.top=(r.top-40)+'px';}));
+$$('#carTrack .car-card').forEach(el=>el.addEventListener('pointerleave',()=>$('#carTip').style.display='none'));
+/* ---------- §9 journey ---------- */
+const JNODES=[
+ {time:'MON 09:10',actor:'JOT',text:'Read 6 notebook lines · 1 needs a date',art:'notebook scrap chip'},
+ {time:'MON 09:11',actor:'SCOUT',text:'Friday goes short by ₹4,000 if Reddy–Varma pays 15 days late',art:'mini dip chart · waterline ₹0'},
+ {time:'MON 09:12',actor:'MEND',text:'Recommended: ask Kiran & Divya for ₹8,000 · even half covers Friday',art:'plan card · counts ₹4,000'},
+ {time:'MON 09:15',actor:'ANANYA',text:'Sent the reminder (Telugu) with pay link INV-101',art:'chat bubble · INV-101'},
+ {time:'WED 16:02',actor:'BANK',text:'₹5,000 credited · “UPI/CR/…/INV-101”',art:'statement row · ₹5,000'},
+ {time:'WED 20:30',actor:'DOCK',text:'Matched to INV-101 by reference · Ananya confirmed',art:'matched ✓ chip'},
+ {time:'WED 20:30',actor:'SCOUT',text:'Friday now +₹1,000 · INV-101 ₹3,000 still due',art:'−₹4,000 → +₹1,000'},
+ {time:'WED 20:31',actor:'DOCK',text:'Same statement imported again · 0 new · never counted twice',art:'duplicate skipped ✓'}];
+$('#journeyNodes').innerHTML=JNODES.map((n,i)=>{const h=HELPERS.find(x=>x.id===n.actor);return `<article class="jnode ${i%2?'right':'left'}" data-i="${i}"><div class="time">${n.time}</div><div class="actor">${h&&portraits[h.id]?`<img src="${portraits[h.id]}" alt="${h.id}">`:''}<b>${n.actor}</b></div><p>${n.actor==='DOCK'&&i===7?n.text.replace('never counted twice','<mark class="hl">never counted twice</mark>'):n.text}</p><div class="art">${n.art}</div></article>`;}).join('');
+$$('#journeyNodes mark.hl').forEach(m=>hlObs.observe(m));
+function updateJourney(){
+ const wrap=$('#riverWrap'); const r=wrap.getBoundingClientRect(); const p=clamp((innerHeight*.7-r.top)/r.height,0,1);
+ const path=$('#riverPath'); const L=path.getTotalLength(); path.style.strokeDasharray=L; path.style.strokeDashoffset=L*(1-p);
+ const pt=path.getPointAtLength(L*p); const boat=$('#riverBoat'); boat.setAttribute('transform',`translate(${pt.x},${pt.y})`);
+ $$('#journeyNodes .jnode').forEach((el,i)=>{const lit=p>(i+.5)/JNODES.length;el.classList.toggle('lit',lit);});
+ if(p>.1)setDock('DOCK IS RECONCILING…',3);
+}
+/* ---------- main loop ---------- */
+let lastT=performance.now(),worldVisible=true,deskVisible=true;
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.target.id==='world')worldVisible=e.isIntersecting;if(e.target.id==='desk')deskVisible=e.isIntersecting;}),{threshold:0});
+io.observe(worldSec); io.observe($('#desk'));
+function raf(t){
+ const dt=clamp(t-lastT,0,50); lastT=t; lenis.raf(t);
+ cx+=(tx-cx)*(1-Math.exp(-16*dt/1000)); cy+=(ty-cy)*(1-Math.exp(-16*dt/1000));
+ cursor.style.left=cx+'px'; cursor.style.top=cy+'px';
+ navState();
+ const w=sectionProgress(worldSec);
+ if(worldVisible&&worldRenderer)updateWorld(w,t,dt);
+ const lp=sectionProgress($('#line')); if($('#line').getBoundingClientRect().top<innerHeight&&$('#line').getBoundingClientRect().bottom>0)updateLine(lp,t,dt);
+ const dp=sectionProgress($('#desk')); if(deskVisible&&deskRenderer)updateDesk(dp,t);
+ updateCarousel(t,dt); updateJourney();
+ requestAnimationFrame(raf);
+}
+function resize(){if(worldRenderer){worldCam.aspect=innerWidth/innerHeight;worldCam.updateProjectionMatrix();}if(deskRenderer){deskCam.aspect=innerWidth/innerHeight;deskCam.updateProjectionMatrix();}drawHeroLine();}
+addEventListener('resize',resize);
+addEventListener('scroll',()=>{if(!introDone&&scrollY>innerHeight*.06)introEnd();},{passive:true});
+/* init */
+initWorld(); initDesk(); buildSlides(); sliderAuto();
+applyHeroToggles();
+if(document.fonts?.ready)document.fonts.ready.then(()=>{drawHeroLine();runIntro();});else runIntro();
+requestAnimationFrame(raf);
+</script>
+</body>
+</html>
